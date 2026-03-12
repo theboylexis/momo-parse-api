@@ -151,6 +151,25 @@
         "time": null
       },
       "notes": "Covers: CAL Bank Push, MiLife Insurance, MTN BUNDLE, ECG prepaid, GWCL, DSTV — anything using 'Payment for GHS' opener"
+    },
+    {
+      "id": "mtn_cash_in",
+      "tx_type": "cash_in",
+      "description": "Cash deposit received at an MTN MoMo agent — note: no colon after 'Current Balance' or 'Available Balance'",
+      "example": "Cash In received for GHS 90.00 from APPLE CARE PLUS . Current Balance GHS 1025.14 Available Balance GHS 1025.14. Transaction ID: 76999661422. Fee charged: GHS 0. Cash in (Deposit) is a free transaction on MTN Mobile Money. Please do not pay any fees for it.",
+      "pattern": "^Cash In received for GHS (?P<amount>[\\d,]+\\.?\\d*) from (?P<counterparty_name>.+?)\\s*\\.\\s*Current Balance GHS (?P<balance>[\\d,]+\\.?\\d*)\\s+Available Balance GHS [\\d,]+\\.?\\d*\\.\\s*Transaction ID:\\s*(?P<tx_id>\\d+)\\.\\s*Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
+      "fields": {
+        "amount": "group:amount",
+        "counterparty_name": "group:counterparty_name",
+        "balance": "group:balance",
+        "tx_id": "group:tx_id",
+        "fee": "group:fee",
+        "counterparty_phone": null,
+        "reference": null,
+        "date": null,
+        "time": null
+      },
+      "notes": "Agent name may have trailing space before period (APPLE CARE PLUS .) or not (KEYSBIGGLES ENTERPRISE.). Fee is always 0 — cash-in is free on MTN MoMo."
     }
   ]
 }

@@ -190,9 +190,9 @@
     {
       "id": "telecel_interest_received",
       "tx_type": "interest_received",
-      "description": "Interest earned on wallet balance — no tx_id, no date, short message",
-      "example": "Dear customer, you have received GHS0.86 from Telecel Cash as interest earned on your mobile wallet. Your new Telecel Cash balance is GHS42.03.",
-      "pattern": "^Dear customer, you have received GHS(?P<amount>[\\d.]+) from Telecel Cash as interest earned.*?Your new Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\.",
+      "description": "Interest earned on wallet balance — no tx_id, no date, short message. Balance label varies: 'Your new balance' or 'Your new Telecel Cash balance'",
+      "example": "Dear customer, you have received GHS0.86 from Telecel Cash as interest earned on your mobile money wallet for the period October 2025 to December 2025. Your new balance is GHS2.39.",
+      "pattern": "^Dear customer, you have received GHS(?P<amount>[\\d.]+) from Telecel Cash as interest earned.*?Your new (?:Telecel Cash )?balance is GHS(?P<balance>[\\d.]+)\\.",
       "fields": {
         "amount": "group:amount",
         "balance": "group:balance",

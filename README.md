@@ -102,7 +102,7 @@ momoparse/
 │   └── telecel_templates.json
 │
 ├── corpus/               # SMS dataset
-│   ├── real_sms_corpus.csv     # Ground truth (76 real annotated SMS)
+│   ├── real_sms_corpus.csv     # Ground truth (92 real annotated SMS)
 │   └── synthetic_sms_corpus.csv
 │
 ├── tests/                # Test suite (Week 2)
@@ -120,6 +120,7 @@ momoparse/
 |------|-----|---------|
 | Transfer sent | ✅ (v1 + v2 + with_phone) | ✅ |
 | Transfer received | ✅ | ✅ |
+| Cash in (deposit) | ✅ | — |
 | Cash out / withdrawal | ✅ | ✅ |
 | Airtime purchase | ✅ | ✅ |
 | Airtime received | — | ✅ |
