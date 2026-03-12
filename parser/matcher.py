@@ -16,6 +16,7 @@ _CRITICAL_FIELDS: dict[str, list[str]] = {
     "airtime_purchase":  ["amount", "balance"],
     "airtime_received":  ["amount", "counterparty_name"],
     "cash_withdrawal":   ["amount", "counterparty_name", "balance"],
+    "cash_in":           ["amount", "counterparty_name", "balance"],
     "cash_out":          ["amount", "counterparty_name", "balance"],
     "bank_transfer":     ["amount", "counterparty_name", "balance"],
     "deposit_received":  ["amount", "counterparty_name", "balance"],

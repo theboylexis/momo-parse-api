@@ -6,7 +6,7 @@ def normalize_amount(value: str) -> Optional[float]:
     """Strip commas/whitespace and convert to float. Returns None on failure."""
     if value is None:
         return None
-    cleaned = re.sub(r"[,\s]", "", str(value))
+    cleaned = re.sub(r"[,\s]", "", str(value)).strip(".")
     try:
         return float(cleaned)
     except ValueError:

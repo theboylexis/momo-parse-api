@@ -22,25 +22,6 @@
       "notes": "Balance in this format may appear as '1,037.64' or '1037.64' — strip commas when parsing"
     },
     {
-      "id": "mtn_transfer_sent_v2",
-      "tx_type": "transfer_sent",
-      "description": "New format: period after counterparty name, TAX charged: GHS 0.00, comma-separated balance",
-      "example": "Payment made for GHS 35.00 to ERNESTINA ANDOH. Current Balance: GHS 1,037.64. Available Balance: GHS 1,037.64. Reference: 1. Transaction ID: 76289975115. Fee charged: GHS 0.00 TAX charged: GHS 0.00.",
-      "pattern": "^Payment made for GHS (?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>[A-Z][^.]+?)\\. Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)\\.\\s*Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\. Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
-      "fields": {
-        "amount": "group:amount",
-        "counterparty_name": "group:counterparty_name",
-        "balance": "group:balance",
-        "reference": "group:reference",
-        "tx_id": "group:tx_id",
-        "fee": "group:fee",
-        "counterparty_phone": null,
-        "date": null,
-        "time": null
-      },
-      "notes": "Same tx sends BOTH v1 and v2 — deduplication required using tx_id"
-    },
-    {
       "id": "mtn_transfer_sent_with_phone",
       "tx_type": "transfer_sent",
       "description": "Payment to business: phone number embedded after business name, no separator",
@@ -60,11 +41,30 @@
       "notes": "Phone number (233XXXXXXXXX) appears directly after business name with a space, no label"
     },
     {
+      "id": "mtn_transfer_sent_v2",
+      "tx_type": "transfer_sent",
+      "description": "New format: period after counterparty name, TAX charged: GHS 0.00, comma-separated balance",
+      "example": "Payment made for GHS 35.00 to ERNESTINA ANDOH. Current Balance: GHS 1,037.64. Available Balance: GHS 1,037.64. Reference: 1. Transaction ID: 76289975115. Fee charged: GHS 0.00 TAX charged: GHS 0.00.",
+      "pattern": "^Payment made for GHS (?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>[A-Z][^.]+?)\\. Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)\\.\\s*Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\. Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
+      "fields": {
+        "amount": "group:amount",
+        "counterparty_name": "group:counterparty_name",
+        "balance": "group:balance",
+        "reference": "group:reference",
+        "tx_id": "group:tx_id",
+        "fee": "group:fee",
+        "counterparty_phone": null,
+        "date": null,
+        "time": null
+      },
+      "notes": "Same tx sends BOTH v1 and v2 — deduplication required using tx_id"
+    },
+    {
       "id": "mtn_transfer_received",
       "tx_type": "transfer_received",
       "description": "Payment received from another MoMo user, with optional network source in reference",
       "example": "Payment received for GHS 41.00 from SAMUEL NANA AGYEI ASANTE Current Balance: GHS 7445.59 . Available Balance: GHS 7445.59. Reference: 1. Transaction ID: 76982067554. TRANSACTION FEE: 0.00",
-      "pattern": "^Payment received for GHS (?P<amount>[\\d,]+\\.?\\d*) from (?P<counterparty_name>[A-Z][A-Z\\s]+?)\\s+Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)[\\s.]+Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\.\\s*TRANSACTION FEE:\\s*(?P<fee>[\\d.]+)",
+      "pattern": "^Payment received for GHS (?P<amount>[\\d,]+\\.?\\d*) from (?P<counterparty_name>[A-Za-z][A-Za-z\\s]+?)\\s+Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)[\\s.]+Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\.\\s*TRANSACTION FEE:\\s*(?P<fee>[\\d.]+)",
       "fields": {
         "amount": "group:amount",
         "counterparty_name": "group:counterparty_name",
@@ -101,17 +101,17 @@
       "tx_type": "airtime_purchase",
       "description": "Self-airtime purchase — includes date/time and External Transaction Id",
       "example": "Your payment of GHS 6.00 to MTN AIRTIME has been completed at 2026-03-02 12:20:20. Your new balance: GHS 1031.64. Fee was GHS 0.00 Tax was GHS -. Reference: -. Financial Transaction Id: 76322126636. External Transaction Id: 76322126636.",
-      "pattern": "^Your payment of GHS (?P<amount>[\\d,]+\\.?\\d*) to MTN AIRTIME has been completed at (?P<date>\\d{4}-\\d{2}-\\d{2}) (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your new balance: GHS (?P<balance>[\\d,]+\\.?\\d*)\\. Fee was GHS (?P<fee>[\\d.]+)",
+      "pattern": "^Your payment of GHS (?P<amount>[\\d,]+\\.?\\d*) to MTN AIRTIME has been completed at (?P<date>\\d{4}-\\d{2}-\\d{2}) (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your new balance: GHS (?P<balance>[\\d,]+\\.?\\d*)\\. Fee was GHS (?P<fee>[\\d.]+).*?Financial Transaction Id:\\s*(?P<tx_id>\\d+)",
       "fields": {
         "amount": "group:amount",
         "date": "group:date",
         "time": "group:time",
         "balance": "group:balance",
         "fee": "group:fee",
+        "tx_id": "group:tx_id",
         "counterparty_name": "literal:MTN AIRTIME",
         "counterparty_phone": "literal:750000",
-        "reference": null,
-        "tx_id": null
+        "reference": null
       }
     },
     {

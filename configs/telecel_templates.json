@@ -7,7 +7,7 @@
       "tx_type": "transfer_sent",
       "description": "Money sent to MTN or Telecel number — dest_network in message body",
       "example": "0000012289051596 Confirmed. GHS33.50 sent to 0594372553 - ISAAC AKANCHALA on MTN MOBILE MONEY on 2026-03-07 at 09:52:16. Your Telecel Cash balance is GHS259.18. You were charged GHS0.00. Your E-levy charge is GHS0.00. Sending money from Telecel Cash to Telecel Cash remains FREE on the Telecel Play App. Download the App https://bit.ly/TelecelPlayGhana and continue to enjoy the convenience. Reference: 1. Sendi k3k3!",
-      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. GHS(?P<amount>[\\d.]+) sent to (?P<counterparty_phone>[\\d]+) - (?P<counterparty_name>[A-Z][A-Z\\s]+?) on (?P<dest_network>MTN MOBILE MONEY|TELECEL CASH) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\. You were charged GHS(?P<fee>[\\d.]+)\\. Your E-levy charge is GHS(?P<e_levy>[\\d.]+)\\..*?Reference:\\s*(?P<reference>.*?)\\.\\s*Sendi k3k3!",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. GHS(?P<amount>[\\d.]+) sent to (?P<counterparty_phone>[\\d]+) - (?P<counterparty_name>[A-Za-z][A-Za-z\\s]+?) on (?P<dest_network>MTN MOBILE MONEY|TELECEL CASH) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\. You were charged GHS(?P<fee>[\\d.]+)\\. Your E-levy charge is GHS(?P<e_levy>[\\d.]+)\\..*?Reference:\\s*(?P<reference>.*?)\\.\\s*Sendi k3k3!",
       "fields": {
         "tx_id": "group:tx_id",
         "amount": "group:amount",
@@ -43,11 +43,30 @@
       }
     },
     {
+      "id": "telecel_transfer_received_telecel",
+      "tx_type": "transfer_received",
+      "description": "Inbound transfer from another Telecel Cash user — no sender phone in message",
+      "example": "0000014271426460 Confirmed. You have received GHS68.95 from BOAKYE APPIAH ABDUL-MUMIN on TELECEL CASH on 2025-08-29 at 08:47:14. Your Telecel Cash balance is GHS1001.02. Ref: electricity",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. You have received GHS(?P<amount>[\\d.]+) from (?P<counterparty_name>[A-Z][A-Za-z\\s\\.\\-]+?) on TELECEL CASH on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\.(?:\\s*Ref:\\s*(?P<reference>.+))?",
+      "fields": {
+        "tx_id": "group:tx_id",
+        "amount": "group:amount",
+        "counterparty_name": "group:counterparty_name",
+        "date": "group:date",
+        "time": "group:time",
+        "balance": "group:balance",
+        "reference": "group:reference",
+        "fee": "literal:0.00",
+        "counterparty_phone": null,
+        "dest_network": "literal:telecel"
+      }
+    },
+    {
       "id": "telecel_merchant_payment",
       "tx_type": "merchant_payment",
       "description": "Payment to a short-code merchant (e.g. 749000 Petra Securities, 735000 EXPRESSPAY)",
       "example": "0000012255152871 Confirmed. GHS5.05 paid to 735000 - EXPRESSPAY on 2026-03-03 at 10:41:30. Your new Telecel Cash balance is GHS456.68. You were charged GHS0.00. Your E-levy charge is GHS0.00. Reference: 90e6d0cdx2f1a.. Sendi k3k3!",
-      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. GHS(?P<amount>[\\d.]+) paid to (?P<counterparty_phone>\\d+) - (?P<counterparty_name>[A-Z][A-Z\\s]+?) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your new Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\. You were charged GHS(?P<fee>[\\d.]+)\\. Your E-levy charge is GHS(?P<e_levy>[\\d.]+)\\. Reference:\\s*(?P<reference>.*?)\\.",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. GHS(?P<amount>[\\d.]+) paid to (?P<counterparty_phone>\\d+) - (?P<counterparty_name>[A-Za-z][A-Za-z\\s\\.]+?) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your new Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\. You were charged GHS(?P<fee>[\\d.]+)\\. Your E-levy charge is GHS(?P<e_levy>[\\d.]+)\\. Reference:\\s*(?P<reference>.*?)\\.",
       "fields": {
         "tx_id": "group:tx_id",
         "amount": "group:amount",
@@ -153,7 +172,7 @@
     },
     {
       "id": "telecel_payment_received",
-      "tx_type": "transfer_received",
+      "tx_type": "payment_received",
       "description": "Inbound payment from a payment processor (e.g. EXPRESSPAY)",
       "example": "0000012269962269 confirmed. You have received GHS387.72 as payment from EXPRESSPAY on 2026-03-04 at 16:47:33. Your new Telecel Cash balance is GHS944.40.",
       "pattern": "^(?P<tx_id>\\d{16}) confirmed\\. You have received GHS(?P<amount>[\\d.]+) as payment from (?P<counterparty_name>[A-Z][A-Z\\s]+?) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your new Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\.",
