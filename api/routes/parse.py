@@ -20,6 +20,8 @@ from api.models import (
     new_request_id,
 )
 from api.rate_limit import rate_limit
+from categorizer.pipeline import categorize
+from categorizer.taxonomy import BY_SLUG
 
 router = APIRouter()
 
@@ -30,6 +32,16 @@ def _to_response(
     request_id: str,
     processing_time_ms: float,
 ) -> ParseResponse:
+    cat_slug, cat_conf = categorize(
+        tx_type=result.tx_type,
+        amount=result.amount,
+        reference=result.reference,
+        counterparty_name=result.counterparty_name,
+        counterparty_phone=result.counterparty_phone,
+        fee=result.fee,
+    )
+    cat_label = BY_SLUG[cat_slug].label if cat_slug in BY_SLUG else None
+
     return ParseResponse(
         request_id=request_id,
         processing_time_ms=processing_time_ms,
@@ -49,6 +61,9 @@ def _to_response(
         reference=result.reference,
         date=result.date,
         time=result.time,
+        category=cat_slug,
+        category_label=cat_label,
+        category_confidence=cat_conf,
         metadata=req.metadata,
     )
 

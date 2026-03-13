@@ -70,6 +70,11 @@ class ParseResponse(BaseModel):
     date: Optional[str] = None
     time: Optional[str] = None
 
+    # Categorization (Week 5)
+    category: Optional[str] = Field(None, description="Financial category slug (e.g. 'personal_transfer_sent')")
+    category_label: Optional[str] = Field(None, description="Human-readable category label")
+    category_confidence: Optional[float] = Field(None, description="Categorization confidence in [0, 1]")
+
     metadata: Optional[dict[str, Any]] = None
 
 
