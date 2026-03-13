@@ -86,6 +86,94 @@ class BatchParseResponse(BaseModel):
     results: list[ParseResponse]
 
 
+# ── Enrichment models (Week 6) ────────────────────────────────────────────────
+
+class EnrichRequest(BaseModel):
+    messages: list[ParseRequest] = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="Array of SMS messages to enrich (max 1,000 per request).",
+    )
+    webhook_url: Optional[str] = Field(
+        None,
+        description="If provided and message count >= 500, results are POSTed here when ready.",
+    )
+
+
+class CategoryBreakdown(BaseModel):
+    amount: float
+    count: int
+    percentage: float
+
+
+class DateRange(BaseModel):
+    start: Optional[str] = None
+    end: Optional[str] = None
+    days_covered: int = 0
+
+
+class EnrichSummary(BaseModel):
+    total_income: float
+    total_expenses: float
+    net_cash_flow: float
+    transaction_count: int
+    category_breakdown: dict[str, CategoryBreakdown]
+    transaction_frequency_per_day: float
+    unique_counterparties: int
+    date_range: DateRange
+
+
+class EnrichResponse(BaseModel):
+    request_id: str
+    api_version: str = "v1"
+    processing_time_ms: Optional[float] = None
+    job_id: Optional[str] = Field(None, description="Populated when request is processed asynchronously.")
+    status: str = "complete"
+    summary: Optional[EnrichSummary] = None
+
+
+class CounterpartySummary(BaseModel):
+    identifier: str
+    total_amount: float
+    transaction_count: int
+
+
+class RiskSignal(BaseModel):
+    signal: str
+    description: str
+    severity: str  # "low" | "medium" | "high"
+
+
+class ProfileResponse(BaseModel):
+    request_id: str
+    api_version: str = "v1"
+    processing_time_ms: Optional[float] = None
+    job_id: Optional[str] = None
+    status: str = "complete"
+    avg_monthly_income: Optional[float] = None
+    income_consistency_cv: Optional[float] = Field(
+        None, description="Coefficient of variation of monthly income. Lower = more consistent."
+    )
+    expense_ratio: Optional[float] = None
+    top_counterparties: list[CounterpartySummary] = []
+    business_activity_score: Optional[int] = Field(None, description="0–100 score of business activity.")
+    revenue_trend: Optional[str] = Field(None, description="growing | stable | declining")
+    risk_signals: list[RiskSignal] = []
+    months_of_data: int = 0
+    summary: Optional[EnrichSummary] = None
+
+
+class JobStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    created_at: str
+    completed_at: Optional[str] = None
+    message_count: int
+    result: Optional[dict[str, Any]] = None
+    error: Optional[str] = None
+
+
 # ── Error models ──────────────────────────────────────────────────────────────
 
 class ErrorDetail(BaseModel):
