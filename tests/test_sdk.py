@@ -15,8 +15,8 @@ from httpx import ASGITransport
 
 from api.main import app
 from api.auth import SANDBOX_KEY
-from sdk import MomoParseClient, AsyncMomoParseClient, ParseResult, BatchResult
-from sdk.exceptions import AuthError, ValidationError
+from momoparse import MomoParseClient, AsyncMomoParseClient, ParseResult, BatchResult
+from momoparse.exceptions import AuthError, ValidationError
 
 _MTN_TRANSFER = (
     "Payment made for GHS 35.00 to ERNESTINA ANDOH. "

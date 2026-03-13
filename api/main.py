@@ -9,10 +9,27 @@ Or via the Makefile:
 """
 from __future__ import annotations
 
+import os
+
+import sentry_sdk
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
 
 from api.routes import health, parse
+
+# ── Sentry (error monitoring) ─────────────────────────────────────────────────
+# Set SENTRY_DSN env var in production. No-op locally if the var is absent.
+
+_dsn = os.getenv("SENTRY_DSN")
+if _dsn:
+    sentry_sdk.init(
+        dsn=_dsn,
+        integrations=[StarletteIntegration(), FastApiIntegration()],
+        traces_sample_rate=0.1,   # 10% of requests traced for performance
+        send_default_pii=False,
+    )
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
