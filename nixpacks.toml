@@ -1,0 +1,7 @@
+[phases.install]
+cmds = [
+  "pip install --upgrade pip",
+  "pip install poetry",
+  "poetry config virtualenvs.create false",
+  "poetry install --no-interaction --without dev"
+]
