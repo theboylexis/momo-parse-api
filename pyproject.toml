@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Transaction intelligence API for Mobile Money SMS — the Plaid Enrich for MoMo markets"
 authors = ["Alex Marfo Appiah"]
 readme = "README.md"
-packages = [{ include = "parser" }, { include = "api" }]
+packages = [{ include = "parser" }, { include = "api" }, { include = "sdk" }]
 
 [tool.poetry.dependencies]
 python = "^3.12"
