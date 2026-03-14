@@ -1,172 +1,162 @@
-# MomoParse
+# momo-parser — Open-Source MoMo SMS Parser for Ghana
 
-**Transaction Intelligence API for Mobile Money SMS**
+Parse raw Mobile Money SMS messages from MTN, Telecel, and AirtelTigo into structured JSON in one line of Python.
 
-MomoParse transforms raw MoMo SMS messages into structured, categorized financial data. It is the "Plaid Enrich" for mobile money markets — an infrastructure layer that fintechs, banks, and developers plug into to understand a user's MoMo financial life.
+```python
+import parser as p
 
-**Launch market:** Ghana → West Africa → Pan-African
-**Status:** Phase 1 — Parser Engine (Weeks 1–4)
+result = p.parse("0000015061132227 Confirmed. You have withdrawn GHS299.58 from A11205 - ACCRA TRADERS on 2025-09-10 at 13:51:07. Your Telecel Cash balance is GHS654.03.")
+
+print(result.telco)       # "telecel"
+print(result.tx_type)     # "cash_withdrawal"
+print(result.amount)      # 299.58
+print(result.balance)     # 654.03
+print(result.date)        # "2025-09-10"
+print(result.confidence)  # 0.97
+```
 
 ---
 
-## What It Does
+## What it does
 
-**Input:** Raw MoMo SMS text from any Ghanaian telco (MTN MoMo, Telecel Cash)
+MoMo SMS messages are unstructured text. Every telco writes them differently. Every transaction type has a different format. This parser handles all of it.
 
-**Output:** Structured JSON
-
-```json
-POST /v1/parse
-{
-  "sms_text": "Payment made for GHS 150.00 to KWAME ASANTE. Current Balance: GHS 1,230.50. Reference: rent. Transaction ID: 76664093335. Fee charged: GHS 1.12 TAX charged: GHS 0.00.",
-  "sender_id": "MobileMoney"
-}
-```
+**Input:** Raw SMS string (optionally + sender ID for better telco detection)
+**Output:** Structured `ParseResult` with all financial fields extracted
 
 ```json
 {
-  "telco": "mtn",
-  "tx_type": "transfer_sent",
-  "template_id": "mtn_transfer_sent_v2",
-  "confidence": 1.0,
-  "amount": 150.00,
+  "telco": "telecel",
+  "tx_type": "cash_withdrawal",
+  "amount": 299.58,
   "currency": "GHS",
-  "balance": 1230.50,
-  "fee": 1.12,
+  "balance": 654.03,
+  "fee": 0.0,
   "counterparty": {
-    "name": "KWAME ASANTE",
-    "phone": null
+    "name": "ACCRA TRADERS",
+    "phone": "A11205"
   },
-  "tx_id": "76664093335",
-  "reference": "rent",
-  "date": null,
-  "time": null
+  "tx_id": "0000015061132227",
+  "date": "2025-09-10",
+  "time": "13:51:07",
+  "confidence": 0.97
 }
 ```
 
----
+## Supported telcos & transaction types
 
-## Architecture
+| Telco | Supported |
+|---|---|
+| MTN Mobile Money | Yes |
+| Telecel Cash | Yes |
+| AirtelTigo Money | Yes |
 
-The parser runs as a **3-stage pipeline**:
+| Transaction type | Slug |
+|---|---|
+| Transfer sent | `transfer_sent` |
+| Transfer received | `transfer_received` |
+| Cash withdrawal (agent) | `cash_withdrawal` |
+| Cash deposit (agent) | `cash_in` |
+| Airtime purchase | `airtime_purchase` |
+| Merchant payment | `merchant_payment` |
+| Loan repayment | `loan_repayment` |
+| Bank transfer | `bank_transfer` |
+| Wallet balance | `wallet_balance` |
+
+## How it works
+
+The parser runs a 3-stage pipeline:
 
 ```
 Raw SMS
-   │
-   ▼
-┌─────────────────────┐
-│  Stage 1            │  TelcoDetector
-│  Telco Detection    │  sender_id → content patterns
-│                     │  confidence: 1.0 (sender) / 0.9 (content)
-└────────┬────────────┘
-         │ telco name
-         ▼
-┌─────────────────────┐
-│  Stage 2            │  TemplateMatcher
-│  Template Matching  │  loads configs/{telco}_templates.json
-│                     │  scores each regex template → best match
-└────────┬────────────┘
-         │ template + match object
-         ▼
-┌─────────────────────┐
-│  Stage 3            │  FieldExtractor
-│  Field Extraction   │  applies field rules from template
-│                     │  normalizes amounts, phones, names
-└────────┬────────────┘
-         │
-         ▼
-     ParseResult
+  │
+  ▼
+Stage 1: Telco Detection
+  Keyword + sender-ID signals identify the telco.
+  │
+  ▼
+Stage 2: Template Matching
+  Regex templates for each (telco, tx_type) pair.
+  Best-scoring template wins.
+  │
+  ▼
+Stage 3: Field Extraction
+  Named capture groups extract amount, balance, fee,
+  counterparty, date, time, tx_id, reference.
+  │
+  ▼
+ParseResult (structured dict + confidence score)
 ```
 
-**Adding a new telco = add one JSON file to `configs/`. No code changes.**
+Confidence score: `1.0` = perfect match, `0.8` = partial match, `0.0` = unrecognized.
 
----
-
-## Project Structure
-
-```
-momoparse/
-├── parser/               # Core parsing engine (Phase 1)
-│   ├── pipeline.py       # MoMoParser — orchestrates all 3 stages
-│   ├── detector.py       # Stage 1: telco detection
-│   ├── matcher.py        # Stage 2: template matching + confidence scoring
-│   ├── extractor.py      # Stage 3: field extraction + normalization
-│   ├── models.py         # ParseResult dataclass
-│   ├── config_loader.py  # JSON template loader with caching
-│   └── normalizers.py    # Amount / phone / name normalization
-│
-├── api/                  # FastAPI server (Phase 1, Week 3)
-│
-├── configs/              # Telco template registries (pluggable)
-│   ├── mtn_templates.json
-│   └── telecel_templates.json
-│
-├── corpus/               # SMS dataset
-│   ├── real_sms_corpus.csv     # Ground truth (92 real annotated SMS)
-│   └── synthetic_sms_corpus.csv
-│
-├── tests/                # Test suite (Week 2)
-│
-├── docs/                 # API documentation (Week 3)
-│
-└── pyproject.toml        # Poetry dependency management
-```
-
----
-
-## Supported Transaction Types
-
-| Type | MTN | Telecel |
-|------|-----|---------|
-| Transfer sent | ✅ (v1 + v2 + with_phone) | ✅ |
-| Transfer received | ✅ | ✅ |
-| Cash in (deposit) | ✅ | — |
-| Cash out / withdrawal | ✅ | ✅ |
-| Airtime purchase | ✅ | ✅ |
-| Airtime received | — | ✅ |
-| Merchant payment | ✅ | ✅ |
-| Bill / service payment | ✅ | — |
-| Bank transfer | — | ✅ |
-| Deposit received | — | ✅ |
-| Loan repayment | — | ✅ |
-| Interest received | — | ✅ |
-| Wallet balance | — | ✅ |
-
----
-
-## Quick Start
+## Installation
 
 ```bash
-# Install dependencies
-poetry install
-
-# Run the parser directly
-python -c "
-import parser as p
-result = p.parse('Payment made for GHS 50.00 to KOFI MENSAH. Current Balance: GHS 200.00. Reference: food. Transaction ID: 76289975115. Fee charged: GHS 0.00 TAX charged: GHS 0.00.', 'MobileMoney')
-print(result.to_dict())
-"
+pip install momoparse
 ```
 
----
+Or clone and run locally:
 
-## Tech Stack
+```bash
+git clone https://github.com/theboylexis/momo-parse-api
+cd momo-parse-api
+pip install poetry && poetry install
+python examples/basic_parse.py
+```
 
-| Layer | Technology |
-|-------|------------|
-| Language | Python 3.12 |
-| API Framework | FastAPI + Pydantic |
-| Database | PostgreSQL 16 |
-| Cache / Rate limiting | Redis |
-| Testing | pytest + hypothesis |
-| Docs | Mintlify |
-| Hosting | Railway / Fly.io |
-| CI/CD | GitHub Actions |
+## Quick start
 
----
+```python
+import parser as p
 
-## Roadmap
+# Basic parse
+result = p.parse(sms_text)
 
-- **Phase 1 (Weeks 1–4):** Parser engine + FastAPI server + Python SDK
-- **Phase 2 (Weeks 5–8):** ML categorization + enrichment + first customers
-- **Phase 3 (Weeks 9–12):** Scale, multi-country, enterprise features
+# With sender ID (improves telco detection)
+result = p.parse(sms_text, sender_id="MobileMoney")
+
+# Access fields
+result.telco          # "mtn" | "telecel" | "airteigo" | "unknown"
+result.tx_type        # "transfer_sent" | "cash_withdrawal" | ...
+result.amount         # float or None
+result.balance        # float or None
+result.fee            # float (0.0 if no fee)
+result.counterparty_name   # str or None
+result.counterparty_phone  # str or None
+result.tx_id          # str or None
+result.reference      # str or None
+result.date           # "YYYY-MM-DD" or None
+result.time           # "HH:MM:SS" or None
+result.confidence     # float in [0, 1]
+
+# Dict output
+result.to_dict()
+```
+
+## Want more?
+
+The open-source parser handles extraction. The [MomoParse API](https://web-production-5aa38.up.railway.app/docs) adds:
+
+- **Categorization** — auto-assigns a financial category (rent, salary, merchant payment, etc.)
+- **Enrichment** — aggregate analytics from 1,000+ SMS in one call
+- **Financial profiles** — monthly income, expense ratio, business activity score, risk signals
+
+Perfect for fintech apps, lending platforms, and MFIs that need structured financial data from MoMo users.
+
+**Free sandbox key:** `sk-sandbox-momoparse` — 100 calls/day, no sign-up.
+
+```bash
+curl -X POST https://web-production-5aa38.up.railway.app/v1/parse \
+  -H "X-API-Key: sk-sandbox-momoparse" \
+  -H "Content-Type: application/json" \
+  -d '{"sms_text": "YOUR_SMS_HERE"}'
+```
+
+## Contributing
+
+Issues and PRs welcome. The parser templates live in `parser/configs/` — adding a new template is a single JSON object.
+
+## License
+
+MIT — use freely. The categorization model and enrichment layer are proprietary.
