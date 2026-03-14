@@ -12,7 +12,7 @@ Hi [Name],
 
 Quick one — I noticed [Company Name] does [loan origination / credit scoring / financial services] for mobile money users. Are you parsing MoMo SMS to assess transaction history?
 
-We built MomoParse to solve exactly that. It takes raw MTN, Telecel, and AirtelTigo SMS and returns structured JSON — transaction type, amount, balance, counterparty, date — plus financial signals like income consistency, expense ratio, and business activity score.
+I built MomoParse to solve exactly that. It takes raw MTN, Telecel, and AirtelTigo SMS and returns structured JSON — transaction type, amount, balance, counterparty, date — plus financial signals like income consistency, expense ratio, and business activity score.
 
 Free sandbox key: `sk-sandbox-momoparse` — try it in 30 seconds:
 
@@ -66,7 +66,7 @@ Hi [Name],
 
 I work with microfinance teams in Ghana who need to assess clients' financial health from their MoMo history. The current process is usually manual — reviewing screenshots or asking clients to forward SMS.
 
-We built a tool that automates this. Clients share their MoMo SMS (which they already have), and MomoParse returns:
+I built a tool that automates this. Clients share their MoMo SMS (which they already have), and MomoParse returns:
 
 - Total income and expenses over any period
 - Spending categories (rent, transport, merchant payments, airtime)
