@@ -49,17 +49,20 @@ def categorize(
     # ── Layer 2: ML model ─────────────────────────────────────────────────────
     ml_result: tuple[str, float] | None = None
     if model.is_trained():
-        record = {
-            "tx_type": tx_type,
-            "amount": amount,
-            "counterparty_name": counterparty_name,
-            "counterparty_phone": counterparty_phone,
-            "reference": reference,
-            "fee": fee,
-        }
-        feat = features.extract(record)
-        ml_slug, ml_conf = model.predict(feat)
-        ml_result = (ml_slug, ml_conf)
+        try:
+            record = {
+                "tx_type": tx_type,
+                "amount": amount,
+                "counterparty_name": counterparty_name,
+                "counterparty_phone": counterparty_phone,
+                "reference": reference,
+                "fee": fee,
+            }
+            feat = features.extract(record)
+            ml_slug, ml_conf = model.predict(feat)
+            ml_result = (ml_slug, ml_conf)
+        except (ImportError, ModuleNotFoundError):
+            pass
 
     # ── Layer 3: Counterparty intelligence ────────────────────────────────────
     cp_key = _cp_key(counterparty_phone, counterparty_name)

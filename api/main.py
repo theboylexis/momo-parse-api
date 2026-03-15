@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
-from api.routes import health, parse, enrich, jobs
+from api.routes import health, parse, enrich, report, jobs, demo
 
 # ── Sentry (error monitoring) ─────────────────────────────────────────────────
 # Set SENTRY_DSN env var in production. No-op locally if the var is absent.
@@ -72,7 +72,9 @@ async def global_error_handler(request: Request, exc: Exception):
 app.include_router(health.router, prefix="/v1")
 app.include_router(parse.router, prefix="/v1")
 app.include_router(enrich.router, prefix="/v1")
+app.include_router(report.router, prefix="/v1")
 app.include_router(jobs.router, prefix="/v1")
+app.include_router(demo.router)
 
 
 # ── Root redirect ─────────────────────────────────────────────────────────────

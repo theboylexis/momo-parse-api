@@ -48,7 +48,13 @@ def predict(features: np.ndarray) -> tuple[str, float]:
 
 
 def is_trained() -> bool:
-    return os.path.exists(_MODEL_PATH)
+    if not os.path.exists(_MODEL_PATH):
+        return False
+    try:
+        _load()
+        return True
+    except (ImportError, ModuleNotFoundError):
+        return False
 
 
 def save(clf) -> None:

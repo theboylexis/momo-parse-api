@@ -164,6 +164,51 @@ class ProfileResponse(BaseModel):
     summary: Optional[EnrichSummary] = None
 
 
+# ── Monthly report models (Week 8) ───────────────────────────────────────────
+
+
+class MonthBreakdown(BaseModel):
+    month: str = Field(description="YYYY-MM")
+    income: float
+    expenses: float
+    net_savings: float
+    savings_rate: float = Field(description="Percentage of income saved")
+    transaction_count: int
+
+
+class Insight(BaseModel):
+    type: str = Field(description="top_spending | spending_trend | fee_alert | airtime_alert")
+    title: str
+    detail: str
+
+
+class SavingsAnalysis(BaseModel):
+    total_income: float
+    total_expenses: float
+    net_savings: float
+    savings_rate: float = Field(description="Overall savings rate as percentage")
+
+
+class Recommendation(BaseModel):
+    priority: str = Field(description="high | medium | info")
+    title: str
+    detail: str
+
+
+class ReportResponse(BaseModel):
+    request_id: str
+    api_version: str = "v1"
+    processing_time_ms: Optional[float] = None
+    job_id: Optional[str] = Field(None, description="Populated when request is processed asynchronously.")
+    status: str = "complete"
+    months: list[MonthBreakdown] = []
+    insights: list[Insight] = []
+    savings_analysis: Optional[SavingsAnalysis] = None
+    recommendations: list[Recommendation] = []
+    financial_health_score: Optional[int] = Field(None, description="0–100 overall financial health score")
+    summary: Optional[EnrichSummary] = None
+
+
 class JobStatusResponse(BaseModel):
     job_id: str
     status: str

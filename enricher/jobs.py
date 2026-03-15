@@ -82,7 +82,7 @@ async def run_enrich_job(job: Job, messages: list[dict], mode: str = "enrich") -
     import parser as p
     from categorizer.pipeline import categorize
     from categorizer.taxonomy import BY_SLUG
-    from enricher.analytics import compute_profile, compute_summary
+    from enricher.analytics import compute_profile, compute_report, compute_summary
 
     job.status = JobStatus.PROCESSING
     t0 = time.monotonic()
@@ -118,6 +118,8 @@ async def run_enrich_job(job: Job, messages: list[dict], mode: str = "enrich") -
 
         if mode == "profile":
             analytics = compute_profile(tx_dicts)
+        elif mode == "report":
+            analytics = compute_report(tx_dicts)
         else:
             analytics = compute_summary(tx_dicts)
 
