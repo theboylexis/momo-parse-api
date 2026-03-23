@@ -91,6 +91,15 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+# ── Database (creates tables on first startup) ───────────────────────────────
+
+@app.on_event("startup")
+def _startup_init_db():
+    from db.engine import init_db
+
+    init_db()
+
+
 # ── Routers ───────────────────────────────────────────────────────────────────
 
 app.include_router(health.router, prefix="/v1")

@@ -1,7 +1,8 @@
 """
 Async job store for large enrichment requests (500+ SMS).
 
-Jobs are stored in-memory. In production, swap for Redis + Celery.
+Uses PostgreSQL when DATABASE_URL is set (via enable_db()), otherwise
+falls back to an in-memory dict. Both paths expose the same API.
 """
 from __future__ import annotations
 
@@ -37,8 +38,16 @@ class Job:
     message_count: int = 0
 
 
-# In-memory store: job_id → Job
+# ── Storage backend ──────────────────────────────────────────────────────────
+# In-memory fallback (default). Replaced by DB when enable_db() is called.
 _jobs: dict[str, Job] = {}
+_use_db = False
+
+
+def enable_db() -> None:
+    """Switch from in-memory to database-backed storage."""
+    global _use_db
+    _use_db = True
 
 
 def create_job(message_count: int, webhook_url: Optional[str] = None) -> Job:
@@ -47,12 +56,43 @@ def create_job(message_count: int, webhook_url: Optional[str] = None) -> Job:
         message_count=message_count,
         webhook_url=webhook_url,
     )
-    _jobs[job.job_id] = job
+    if _use_db:
+        from db.engine import get_session
+        from db.models import JobRecord
+
+        with get_session() as session:
+            session.add(JobRecord(
+                job_id=job.job_id,
+                status=job.status.value,
+                webhook_url=webhook_url,
+                message_count=message_count,
+            ))
+            session.commit()
+    else:
+        _jobs[job.job_id] = job
     logger.info("Job %s created (%d messages)", job.job_id, message_count)
     return job
 
 
 def get_job(job_id: str) -> Optional[Job]:
+    if _use_db:
+        from db.engine import get_session
+        from db.models import JobRecord
+
+        with get_session() as session:
+            row = session.query(JobRecord).filter_by(job_id=job_id).first()
+            if not row:
+                return None
+            return Job(
+                job_id=row.job_id,
+                status=JobStatus(row.status),
+                created_at=row.created_at.isoformat() if row.created_at else "",
+                completed_at=row.completed_at.isoformat() if row.completed_at else None,
+                result=row.result,
+                error=row.error,
+                webhook_url=row.webhook_url,
+                message_count=row.message_count or 0,
+            )
     return _jobs.get(job_id)
 
 
@@ -60,6 +100,17 @@ def _set_complete(job: Job, result: dict[str, Any]) -> None:
     job.status = JobStatus.COMPLETE
     job.result = result
     job.completed_at = datetime.now(timezone.utc).isoformat()
+    if _use_db:
+        from db.engine import get_session
+        from db.models import JobRecord
+
+        with get_session() as session:
+            row = session.query(JobRecord).filter_by(job_id=job.job_id).first()
+            if row:
+                row.status = JobStatus.COMPLETE.value
+                row.result = result
+                row.completed_at = datetime.now(timezone.utc)
+                session.commit()
     logger.info("Job %s complete", job.job_id)
 
 
@@ -67,6 +118,17 @@ def _set_failed(job: Job, error: str) -> None:
     job.status = JobStatus.FAILED
     job.error = error
     job.completed_at = datetime.now(timezone.utc).isoformat()
+    if _use_db:
+        from db.engine import get_session
+        from db.models import JobRecord
+
+        with get_session() as session:
+            row = session.query(JobRecord).filter_by(job_id=job.job_id).first()
+            if row:
+                row.status = JobStatus.FAILED.value
+                row.error = error
+                row.completed_at = datetime.now(timezone.utc)
+                session.commit()
     logger.error("Job %s failed: %s", job.job_id, error)
 
 
