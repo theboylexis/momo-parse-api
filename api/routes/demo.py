@@ -221,9 +221,9 @@ _HTML = """\
     align-items: flex-start;
     line-height: 1.5;
   }
-  .confidence-bar.low { background: #FEF3C7; color: #92400E; display: flex; }
-  .confidence-bar.medium { background: #F0F4FF; color: #3B4FAC; display: flex; }
-  .confidence-bar.high { background: #E6F5F0; color: #065F46; display: flex; }
+  .confidence-bar.low { background: #f5f5f5; color: #666; display: flex; }
+  .confidence-bar.medium { background: #f5f5f5; color: #666; display: flex; }
+  .confidence-bar.high { background: #f5f5f5; color: #666; display: flex; }
 
   .meta-line {
     font-size: 13px;
@@ -310,7 +310,7 @@ _HTML = """\
     margin-top: 2px;
   }
   .green { color: #0D9373; }
-  .red { color: #dc2626; }
+  .red { color: #888; }
 
   /* ── Section titles ────────────────────── */
   .section { margin-bottom: 32px; }
@@ -428,9 +428,9 @@ _HTML = """\
     vertical-align: middle;
     margin-right: 6px;
   }
-  .tag-high { background: #FEE2E2; color: #991B1B; }
-  .tag-medium { background: #FEF3C7; color: #92400E; }
-  .tag-info { background: #F0F4FF; color: #3B4FAC; }
+  .tag-high { background: #f0f0f0; color: #333; }
+  .tag-medium { background: #f0f0f0; color: #333; }
+  .tag-info { background: #f0f0f0; color: #333; }
 
   /* ── Footer ────────────────────────────── */
   .footer {
@@ -609,7 +609,7 @@ function ghs(n) {
   return 'GHS ' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-const COLORS = ['#3B82F6','#0D9373','#F59E0B','#dc2626','#8B5CF6','#0EA5E9','#EC4899','#14B8A6'];
+const COLORS = ['#111','#333','#555','#777','#999','#aaa','#bbb','#ccc'];
 
 function renderReport(data) {
   const report = document.getElementById('report');
@@ -638,7 +638,7 @@ function renderReport(data) {
   const ring = document.getElementById('ring');
   const circ = 263.89;
   const offset = circ - (score / 100) * circ;
-  const color = score >= 70 ? '#0D9373' : score >= 45 ? '#F59E0B' : '#dc2626';
+  const color = '#0D9373';
 
   ring.style.stroke = color;
   requestAnimationFrame(() => { ring.style.strokeDashoffset = offset; });
@@ -668,7 +668,7 @@ function renderReport(data) {
   const tbody = document.querySelector('#months-table tbody');
   tbody.innerHTML = months.map(m => {
     const rate = m.savings_rate || 0;
-    const bc = rate >= 20 ? '#0D9373' : rate >= 0 ? '#F59E0B' : '#dc2626';
+    const bc = '#0D9373';
     const bw = Math.min(Math.abs(rate), 100);
     return '<tr>' +
       '<td style="font-weight:500">' + m.month + '</td>' +
