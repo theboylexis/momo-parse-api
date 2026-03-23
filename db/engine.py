@@ -47,7 +47,17 @@ def init_db() -> None:
     # Import models so Base.metadata knows about them, then create tables
     import db.models  # noqa: F401
 
-    Base.metadata.create_all(_engine)
+    try:
+        Base.metadata.create_all(_engine)
+    except Exception:
+        logger.warning(
+            "Database connection failed — falling back to in-memory storage",
+            exc_info=True,
+        )
+        _engine = None
+        _SessionLocal = None
+        return
+
     logger.info("Database tables ready")
 
     # Enable DB-backed storage in dependent modules
