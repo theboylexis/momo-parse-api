@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+from contextlib import asynccontextmanager
 
 import sentry_sdk
 from fastapi import FastAPI, Request, status
@@ -37,6 +38,16 @@ if _dsn:
         send_default_pii=False,
     )
 
+# ── Lifespan (runs on startup / shutdown) ─────────────────────────────────────
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    from db.engine import init_db
+
+    init_db()
+    yield
+
+
 # ── App ───────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
@@ -50,12 +61,13 @@ app = FastAPI(
         "`X-API-Key` header. Get your key at [momoparse.com](https://momoparse.com).\n\n"
         "**Sandbox key:** `sk-sandbox-momoparse` — free, no sign-up, 100 calls/day."
     ),
-    version="0.1.0",
+    version="0.2.0",
     contact={"name": "MomoParse", "email": "hello@momoparse.com"},
     license_info={"name": "Proprietary"},
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    lifespan=_lifespan,
 )
 
 
@@ -89,15 +101,6 @@ async def log_requests(request: Request, call_next):
         duration_ms,
     )
     return response
-
-
-# ── Database (creates tables on first startup) ───────────────────────────────
-
-@app.on_event("startup")
-def _startup_init_db():
-    from db.engine import init_db
-
-    init_db()
 
 
 # ── Routers ───────────────────────────────────────────────────────────────────
