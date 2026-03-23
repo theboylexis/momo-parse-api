@@ -2,7 +2,7 @@
 GET /demo — interactive demo page for the MomoParse report endpoint.
 
 Single self-contained HTML page. No templates, no static files, no JS frameworks.
-CDN: Google Fonts (Inter) + Lucide Icons.
+CDN: Google Fonts (Inter).
 """
 from __future__ import annotations
 
@@ -41,658 +41,498 @@ _HTML = """\
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MomoParse — Financial Report Demo</title>
+<title>MomoParse</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <style>
-  :root {
-    --white: #ffffff;
-    --gray-50: #f8fafc;
-    --gray-100: #f1f5f9;
-    --gray-200: #e2e8f0;
-    --gray-300: #cbd5e1;
-    --gray-400: #94a3b8;
-    --gray-500: #64748b;
-    --gray-600: #475569;
-    --gray-700: #334155;
-    --gray-800: #1e293b;
-    --gray-900: #0f172a;
-    --blue-50: #eff6ff;
-    --blue-100: #dbeafe;
-    --blue-500: #3b82f6;
-    --blue-600: #2563eb;
-    --blue-700: #1d4ed8;
-    --emerald-50: #ecfdf5;
-    --emerald-500: #10b981;
-    --emerald-600: #059669;
-    --emerald-700: #047857;
-    --rose-50: #fff1f2;
-    --rose-500: #f43f5e;
-    --rose-600: #e11d48;
-    --amber-50: #fffbeb;
-    --amber-500: #f59e0b;
-    --amber-600: #d97706;
-    --amber-700: #b45309;
-    --violet-50: #f5f3ff;
-    --violet-500: #8b5cf6;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--gray-50);
-    color: var(--gray-800);
-    line-height: 1.6;
-    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #fff;
+    color: #111;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ── Header ──────────────────────────────────────── */
+  /* ── Header ──────────────────────────── */
   .topbar {
-    background: var(--white);
-    border-bottom: 1px solid var(--gray-200);
-    padding: 0 1.5rem;
-    height: 56px;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 0 24px;
+    height: 52px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: sticky;
     top: 0;
+    background: #fff;
     z-index: 50;
   }
   .logo {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: var(--gray-900);
-    text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 10px;
+    text-decoration: none;
+    color: #111;
   }
   .logo-mark {
-    width: 28px; height: 28px;
-    background: var(--blue-600);
-    border-radius: 7px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: var(--white);
-    font-weight: 700;
-    font-size: 0.8rem;
+    gap: 2px;
   }
-  .logo span { color: var(--blue-600); }
-  .topbar-links { display: flex; gap: 1rem; align-items: center; }
-  .topbar-links a {
-    font-size: 0.8125rem;
-    color: var(--gray-500);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.15s;
-  }
-  .topbar-links a:hover { color: var(--gray-800); }
-  .badge-live {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    background: var(--emerald-50);
-    color: var(--emerald-700);
-    padding: 0.2rem 0.5rem;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-  }
-  .badge-live::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--emerald-500);
-    border-radius: 50%;
-    display: inline-block;
-  }
-
-  /* ── Container ───────────────────────────────────── */
-  .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-
-  /* ── Page header ─────────────────────────────────── */
-  .page-header { margin-bottom: 1.5rem; }
-  .page-header h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--gray-900);
-    margin-bottom: 0.25rem;
-  }
-  .page-header p {
-    color: var(--gray-500);
-    font-size: 0.875rem;
-  }
-
-  /* ── Input section ───────────────────────────────── */
-  .input-card {
-    background: var(--white);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-  }
-  .input-label {
+  .logo-mark span {
     display: block;
+    width: 3px;
+    border-radius: 1.5px;
+    background: #111;
+  }
+  .logo-mark span:nth-child(1) { height: 8px; }
+  .logo-mark span:nth-child(2) { height: 14px; }
+  .logo-mark span:nth-child(3) { height: 11px; }
+  .logo-mark span:nth-child(4) { height: 17px; }
+  .logo-text {
+    font-size: 15px;
     font-weight: 600;
-    font-size: 0.8125rem;
-    color: var(--gray-700);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: -0.02em;
+  }
+  .topbar-nav { display: flex; gap: 20px; align-items: center; }
+  .topbar-nav a {
+    font-size: 13px;
+    color: #666;
+    text-decoration: none;
+  }
+  .topbar-nav a:hover { color: #111; }
+  .env-tag {
+    font-size: 11px;
+    font-weight: 500;
+    color: #0D9373;
+    background: #E6F5F0;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ── Main ─────────────────────────────── */
+  .main { max-width: 880px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  .page-title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .page-sub {
+    color: #666;
+    font-size: 15px;
+    margin-bottom: 32px;
+  }
+
+  /* ── Input ─────────────────────────────── */
+  .input-section { margin-bottom: 40px; }
+  .input-section label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #333;
   }
   textarea {
     width: 100%;
-    height: 200px;
-    background: var(--gray-50);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-sm);
-    color: var(--gray-800);
-    padding: 0.875rem 1rem;
+    height: 180px;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+    padding: 12px 14px;
     font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-    font-size: 0.75rem;
-    resize: vertical;
+    font-size: 12px;
     line-height: 1.6;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    color: #333;
+    background: #fafafa;
+    resize: vertical;
   }
   textarea:focus {
     outline: none;
-    border-color: var(--blue-500);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #111;
+    background: #fff;
   }
   .input-hint {
-    color: var(--gray-400);
-    font-size: 0.75rem;
-    margin-top: 0.5rem;
+    font-size: 12px;
+    color: #999;
+    margin-top: 6px;
   }
-  .actions-row {
+  .controls {
     display: flex;
-    gap: 0.75rem;
-    margin-top: 1rem;
+    gap: 8px;
+    margin-top: 12px;
     align-items: center;
     flex-wrap: wrap;
   }
-
   select {
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-sm);
-    background: var(--white);
-    color: var(--gray-700);
-    border: 1px solid var(--gray-200);
-    font-size: 0.8125rem;
+    padding: 7px 12px;
+    border: 1px solid #d4d4d4;
+    border-radius: 6px;
+    font-size: 13px;
     font-family: inherit;
+    color: #333;
+    background: #fff;
     cursor: pointer;
   }
+  select:focus { outline: none; border-color: #111; }
 
-  button {
-    padding: 0.5rem 1.25rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.8125rem;
-    font-weight: 600;
+  .btn {
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
     border: none;
-    transition: all 0.15s;
     font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
   }
-  button:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
-  button:active { transform: translateY(0); }
-  button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-
-  .btn-primary {
-    background: var(--blue-600);
-    color: var(--white);
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary { background: #111; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #333; }
+  .btn-secondary {
+    background: #fff;
+    color: #666;
+    border: 1px solid #d4d4d4;
   }
-  .btn-primary:hover { background: var(--blue-700); }
-  .btn-ghost {
-    background: transparent;
-    color: var(--gray-500);
-    border: 1px solid var(--gray-200);
-  }
-  .btn-ghost:hover { background: var(--gray-50); color: var(--gray-700); box-shadow: none; transform: none; }
+  .btn-secondary:hover:not(:disabled) { background: #f5f5f5; color: #333; }
 
-  .status-text { color: var(--gray-400); font-size: 0.8125rem; }
-  .status-text.error { color: var(--rose-500); }
-  .status-text.success { color: var(--emerald-600); }
+  .status { font-size: 13px; color: #999; margin-left: 4px; }
+  .status.error { color: #dc2626; }
+  .status.ok { color: #0D9373; }
 
-  /* ── Report sections ─────────────────────────────── */
+  /* ── Report ────────────────────────────── */
   .report { display: none; }
   .report.visible { display: block; }
 
-  .section { margin-bottom: 1.5rem; }
-  .section-header {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--gray-400);
-    margin-bottom: 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
+  .report-divider {
+    border: none;
+    border-top: 1px solid #e5e5e5;
+    margin: 0 0 32px;
   }
 
-  /* ── Data confidence banner ──────────────────────── */
-  .confidence-banner {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.8125rem;
-    margin-bottom: 1.5rem;
+  .confidence-bar {
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 24px;
+    display: none;
+    gap: 6px;
+    align-items: flex-start;
+    line-height: 1.5;
   }
-  .confidence-banner.low {
-    background: var(--amber-50);
-    color: var(--amber-700);
-    border: 1px solid #fde68a;
-  }
-  .confidence-banner.medium {
-    background: var(--blue-50);
-    color: var(--blue-700);
-    border: 1px solid var(--blue-100);
-  }
-  .confidence-banner.high {
-    background: var(--emerald-50);
-    color: var(--emerald-700);
-    border: 1px solid #a7f3d0;
-  }
-  .confidence-banner i { flex-shrink: 0; }
+  .confidence-bar.low { background: #FEF3C7; color: #92400E; display: flex; }
+  .confidence-bar.medium { background: #F0F4FF; color: #3B4FAC; display: flex; }
+  .confidence-bar.high { background: #E6F5F0; color: #065F46; display: flex; }
 
-  /* ── Summary meta line ───────────────────────────── */
-  .report-meta {
-    font-size: 0.8125rem;
-    color: var(--gray-500);
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
+  .meta-line {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 28px;
   }
+  .meta-line strong { color: #666; font-weight: 500; }
 
-  /* ── Health + KPI row ────────────────────────────── */
-  .top-grid {
+  /* ── Score + KPIs ──────────────────────── */
+  .overview-grid {
     display: grid;
-    grid-template-columns: 240px 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
   }
-  @media (max-width: 700px) {
-    .top-grid { grid-template-columns: 1fr; }
+  @media (max-width: 640px) {
+    .overview-grid { grid-template-columns: 1fr; }
   }
 
-  .card {
-    background: var(--white);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 1.5rem;
-    transition: box-shadow 0.15s;
+  .score-card {
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
-  .card:hover { box-shadow: var(--shadow-md); }
-
-  /* Health score ring */
-  .health-card { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-  .score-svg { width: 120px; height: 120px; transform: rotate(-90deg); }
-  .score-track { fill: none; stroke: var(--gray-100); stroke-width: 8; }
-  .score-fill {
+  .score-ring { width: 100px; height: 100px; transform: rotate(-90deg); }
+  .score-ring .track { fill: none; stroke: #f0f0f0; stroke-width: 7; }
+  .score-ring .fill {
     fill: none;
-    stroke-width: 8;
+    stroke-width: 7;
     stroke-linecap: round;
-    transition: stroke-dashoffset 1s ease-out, stroke 0.3s;
+    transition: stroke-dashoffset 0.8s ease-out;
   }
-  .score-text {
-    font-size: 1.75rem;
+  .score-num {
+    font-size: 32px;
     font-weight: 700;
-    margin-top: 0.5rem;
+    letter-spacing: -0.03em;
+    margin-top: 10px;
+    line-height: 1;
   }
-  .score-verdict {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    margin-top: 0.125rem;
+  .score-label {
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 4px;
   }
-  .score-sublabel {
-    font-size: 0.6875rem;
-    color: var(--gray-400);
-    margin-top: 0.25rem;
+  .score-sub {
+    font-size: 11px;
+    color: #999;
+    margin-top: 2px;
   }
 
-  /* KPI cards */
   .kpi-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 12px;
   }
-  @media (max-width: 480px) {
-    .kpi-grid { grid-template-columns: 1fr; }
-  }
+  @media (max-width: 480px) { .kpi-grid { grid-template-columns: 1fr; } }
+
   .kpi {
-    background: var(--white);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 1.25rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 16px 18px;
   }
   .kpi-label {
-    font-size: 0.6875rem;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 500;
+    color: #999;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--gray-400);
-    margin-bottom: 0.375rem;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
+    margin-bottom: 4px;
   }
   .kpi-value {
-    font-size: 1.375rem;
+    font-size: 22px;
     font-weight: 700;
+    letter-spacing: -0.02em;
     line-height: 1.2;
   }
-  .kpi-sub {
-    font-size: 0.75rem;
-    color: var(--gray-400);
-    margin-top: 0.25rem;
+  .kpi-note {
+    font-size: 11px;
+    color: #999;
+    margin-top: 2px;
   }
-  .positive { color: var(--emerald-600); }
-  .negative { color: var(--rose-500); }
+  .green { color: #0D9373; }
+  .red { color: #dc2626; }
 
-  /* ── Monthly breakdown table ─────────────────────── */
-  .table-card { overflow: hidden; padding: 0; }
-  .table-card .section-header { padding: 1.25rem 1.5rem 0; margin-bottom: 0.5rem; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  /* ── Section titles ────────────────────── */
+  .section { margin-bottom: 32px; }
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  /* ── Table ──────────────────────────────── */
+  table { width: 100%; border-collapse: collapse; }
   thead th {
     text-align: left;
-    font-size: 0.6875rem;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 500;
+    color: #999;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--gray-400);
-    padding: 0.75rem 1.5rem;
-    border-bottom: 1px solid var(--gray-100);
-    background: var(--gray-50);
+    padding: 0 0 8px;
+    border-bottom: 1px solid #e5e5e5;
   }
   tbody td {
-    padding: 0.75rem 1.5rem;
-    border-bottom: 1px solid var(--gray-100);
-    color: var(--gray-700);
+    padding: 10px 0;
+    font-size: 13px;
+    border-bottom: 1px solid #f0f0f0;
   }
   tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover { background: var(--gray-50); }
-  .rate-bar-cell { display: flex; align-items: center; gap: 0.5rem; }
-  .rate-bar-bg {
-    width: 48px; height: 6px;
-    background: var(--gray-100);
-    border-radius: 3px;
-    overflow: hidden;
-    flex-shrink: 0;
+  .savings-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
-  .rate-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease-out; }
+  .bar-track {
+    width: 40px; height: 4px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bar-fill { height: 100%; border-radius: 2px; }
 
-  /* ── Category breakdown ──────────────────────────── */
-  .cat-bar-row {
+  /* ── Category bars ─────────────────────── */
+  .cat-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0;
+    gap: 12px;
+    padding: 6px 0;
   }
-  .cat-label {
-    width: 140px;
-    font-size: 0.8125rem;
-    color: var(--gray-600);
+  .cat-name {
+    width: 130px;
+    font-size: 13px;
+    color: #444;
     flex-shrink: 0;
     text-transform: capitalize;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .cat-bar-track {
+  .cat-track {
     flex: 1;
-    height: 10px;
-    background: var(--gray-100);
-    border-radius: 5px;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
     overflow: hidden;
   }
-  .cat-bar-fill {
+  .cat-fill {
     height: 100%;
-    border-radius: 5px;
-    transition: width 0.6s ease-out;
+    border-radius: 4px;
+    transition: width 0.5s ease-out;
   }
-  .cat-amount {
-    width: 100px;
+  .cat-val {
+    width: 90px;
     text-align: right;
-    font-size: 0.8125rem;
+    font-size: 13px;
     font-weight: 500;
-    color: var(--gray-700);
+    color: #333;
     flex-shrink: 0;
   }
   .cat-pct {
-    width: 40px;
+    width: 36px;
     text-align: right;
-    font-size: 0.75rem;
-    color: var(--gray-400);
+    font-size: 12px;
+    color: #999;
     flex-shrink: 0;
   }
 
-  /* ── Insight / recommendation cards ──────────────── */
-  .insight-cards { display: grid; gap: 0.75rem; }
-  .insight-item {
-    background: var(--white);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-sm);
-    padding: 1rem 1.25rem;
-    border-left: 3px solid var(--gray-200);
-    transition: box-shadow 0.15s;
+  /* ── Insight list ──────────────────────── */
+  .insight-list { display: grid; gap: 8px; }
+  .insight {
+    padding: 12px 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
   }
-  .insight-item:hover { box-shadow: var(--shadow); }
-  .insight-item.priority-high { border-left-color: var(--rose-500); }
-  .insight-item.priority-medium { border-left-color: var(--amber-500); }
-  .insight-item.priority-info { border-left-color: var(--blue-500); }
-  .insight-item.type-top_spending { border-left-color: var(--violet-500); }
-  .insight-item.type-spending_trend { border-left-color: var(--blue-500); }
-  .insight-item.type-fee_alert { border-left-color: var(--amber-500); }
-  .insight-item.type-airtime_alert { border-left-color: var(--rose-500); }
   .insight-title {
-    font-size: 0.8125rem;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--gray-800);
-    margin-bottom: 0.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    color: #111;
+    margin-bottom: 2px;
   }
   .insight-detail {
-    font-size: 0.8125rem;
-    color: var(--gray-500);
+    font-size: 13px;
+    color: #666;
     line-height: 1.5;
   }
-  .priority-chip {
-    font-size: 0.625rem;
-    font-weight: 700;
-    padding: 0.125rem 0.4rem;
-    border-radius: 4px;
+  .insight-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
+    vertical-align: middle;
+    margin-right: 6px;
   }
-  .priority-chip.high { background: var(--rose-50); color: var(--rose-600); }
-  .priority-chip.medium { background: var(--amber-50); color: var(--amber-600); }
-  .priority-chip.info { background: var(--blue-50); color: var(--blue-600); }
+  .tag-high { background: #FEE2E2; color: #991B1B; }
+  .tag-medium { background: #FEF3C7; color: #92400E; }
+  .tag-info { background: #F0F4FF; color: #3B4FAC; }
 
-  /* ── Loading skeleton ────────────────────────────── */
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-  .skeleton {
-    background: var(--gray-100);
-    border-radius: var(--radius-sm);
-    animation: pulse 1.5s infinite;
-  }
-  .skeleton-row { height: 1rem; margin-bottom: 0.5rem; border-radius: 4px; }
-  .skeleton-block { height: 120px; }
-
-  /* ── Fade-in animation ───────────────────────────── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .fade-in {
-    animation: fadeUp 0.4s ease-out forwards;
-    opacity: 0;
-  }
-  .fade-in-delay-1 { animation-delay: 0.1s; }
-  .fade-in-delay-2 { animation-delay: 0.2s; }
-  .fade-in-delay-3 { animation-delay: 0.3s; }
-  .fade-in-delay-4 { animation-delay: 0.4s; }
-  .fade-in-delay-5 { animation-delay: 0.5s; }
-
-  /* ── Footer ──────────────────────────────────────── */
+  /* ── Footer ────────────────────────────── */
   .footer {
-    margin-top: 3rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--gray-200);
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e5e5;
+    font-size: 12px;
+    color: #999;
     text-align: center;
-    color: var(--gray-400);
-    font-size: 0.75rem;
   }
-  .footer a { color: var(--blue-600); text-decoration: none; }
+  .footer a { color: #111; text-decoration: none; }
   .footer a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
 
-<!-- Top bar -->
 <header class="topbar">
   <a href="/" class="logo">
-    <div class="logo-mark">M</div>
-    Momo<span>Parse</span>
+    <div class="logo-mark">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="logo-text">MomoParse</div>
   </a>
-  <div class="topbar-links">
-    <span class="badge-live">Sandbox</span>
-    <a href="/docs">API Docs</a>
+  <nav class="topbar-nav">
+    <span class="env-tag">Sandbox</span>
+    <a href="/docs">Docs</a>
     <a href="/redoc">Reference</a>
-  </div>
+  </nav>
 </header>
 
-<div class="container">
-  <!-- Page header -->
-  <div class="page-header">
-    <h1>Financial Report</h1>
-    <p>Paste MoMo SMS messages to generate a detailed monthly breakdown, spending insights, and recommendations.</p>
-  </div>
+<div class="main">
+  <h1 class="page-title">Financial Report</h1>
+  <p class="page-sub">Paste MoMo SMS messages and get a structured financial breakdown.</p>
 
-  <!-- Input card -->
-  <div class="input-card">
-    <label class="input-label" for="sms-input">SMS Messages</label>
+  <div class="input-section">
+    <label for="sms-input">SMS Messages</label>
     <textarea id="sms-input" placeholder="Paste your MoMo SMS messages here, one per line...">{{SAMPLE_SMS}}</textarea>
-    <p class="input-hint">Each line is one SMS. The sample above shows 2 months of typical Telecel Cash transactions.</p>
-    <div class="actions-row">
+    <p class="input-hint">Each line is one SMS. Sample above: 2 months of Telecel Cash transactions.</p>
+    <div class="controls">
       <select id="telco-select" title="Select your telco">
-        <option value="auto">Auto-detect telco</option>
+        <option value="auto">Auto-detect</option>
         <option value="MobileMoney">MTN MoMo</option>
         <option value="T-CASH" selected>Telecel Cash</option>
       </select>
-      <button class="btn-primary" id="btn-generate" onclick="generateReport()">
-        <i data-lucide="bar-chart-3" style="width:15px;height:15px;"></i>
-        Generate Report
-      </button>
-      <button class="btn-ghost" onclick="resetSample()">Reset Sample</button>
-      <span class="status-text" id="status"></span>
+      <button class="btn btn-primary" id="btn-go" onclick="generateReport()">Generate report</button>
+      <button class="btn btn-secondary" onclick="resetSample()">Reset</button>
+      <span class="status" id="status"></span>
     </div>
   </div>
 
-  <!-- Report output -->
   <div class="report" id="report">
+    <hr class="report-divider">
 
-    <!-- Data confidence banner -->
-    <div id="confidence-banner" class="confidence-banner" style="display:none;"></div>
+    <div id="confidence-bar" class="confidence-bar"></div>
+    <div class="meta-line" id="meta-line"></div>
 
-    <!-- Report meta -->
-    <div class="report-meta" id="report-meta"></div>
-
-    <!-- Health score + KPI grid -->
-    <div class="top-grid fade-in">
-      <!-- Health score -->
-      <div class="card health-card" id="health-card">
-        <svg class="score-svg" viewBox="0 0 120 120">
-          <circle class="score-track" cx="60" cy="60" r="52" />
-          <circle class="score-fill" id="score-ring" cx="60" cy="60" r="52"
-            stroke-dasharray="326.73" stroke-dashoffset="326.73" />
+    <div class="overview-grid">
+      <div class="score-card">
+        <svg class="score-ring" viewBox="0 0 100 100">
+          <circle class="track" cx="50" cy="50" r="42" />
+          <circle class="fill" id="ring" cx="50" cy="50" r="42"
+            stroke-dasharray="263.89" stroke-dashoffset="263.89" />
         </svg>
-        <div class="score-text" id="score-text">--</div>
-        <div class="score-verdict" id="score-verdict"></div>
-        <div class="score-sublabel">Financial Health Score</div>
+        <div class="score-num" id="score-num">--</div>
+        <div class="score-label" id="score-label"></div>
+        <div class="score-sub">Health Score</div>
       </div>
-
-      <!-- KPIs -->
-      <div class="kpi-grid" id="kpi-grid"></div>
+      <div class="kpi-grid" id="kpis"></div>
     </div>
 
-    <!-- Monthly breakdown -->
-    <div class="section fade-in fade-in-delay-1">
-      <div class="card table-card">
-        <div class="section-header">
-          <i data-lucide="calendar" style="width:14px;height:14px;"></i>
-          Monthly Breakdown
-        </div>
-        <div style="overflow-x:auto;">
-          <table id="month-table">
-            <thead>
-              <tr><th>Month</th><th>Income</th><th>Expenses</th><th>Net Saved</th><th>Savings Rate</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
+    <div class="section" id="months-section">
+      <div class="section-title">Monthly Breakdown</div>
+      <table id="months-table">
+        <thead>
+          <tr><th>Month</th><th>Income</th><th>Expenses</th><th>Net</th><th>Rate</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
 
-    <!-- Category breakdown -->
-    <div class="section fade-in fade-in-delay-2" id="category-section" style="display:none;">
-      <div class="card">
-        <div class="section-header">
-          <i data-lucide="pie-chart" style="width:14px;height:14px;"></i>
-          Spending Breakdown
-        </div>
-        <div id="category-bars"></div>
-      </div>
+    <div class="section" id="cats-section" style="display:none;">
+      <div class="section-title">Spending by Category</div>
+      <div id="cat-bars"></div>
     </div>
 
-    <!-- Insights -->
-    <div class="section fade-in fade-in-delay-3" id="insights-section" style="display:none;">
-      <div class="section-header">
-        <i data-lucide="lightbulb" style="width:14px;height:14px;"></i>
-        Spending Insights
-      </div>
-      <div class="insight-cards" id="insights-list"></div>
+    <div class="section" id="insights-section" style="display:none;">
+      <div class="section-title">Insights</div>
+      <div class="insight-list" id="insights-list"></div>
     </div>
 
-    <!-- Recommendations -->
-    <div class="section fade-in fade-in-delay-4" id="recs-section" style="display:none;">
-      <div class="section-header">
-        <i data-lucide="target" style="width:14px;height:14px;"></i>
-        Recommendations
-      </div>
-      <div class="insight-cards" id="recs-list"></div>
+    <div class="section" id="recs-section" style="display:none;">
+      <div class="section-title">Recommendations</div>
+      <div class="insight-list" id="recs-list"></div>
     </div>
   </div>
 
   <div class="footer">
-    Built with the <a href="/docs">MomoParse API</a> &middot; Paste real MoMo SMS to try your own data
+    Built with the <a href="/docs">MomoParse API</a>
   </div>
 </div>
 
 <script>
-lucide.createIcons();
-
 const SAMPLE_TELECEL = `{{SAMPLE_SMS}}`;
 const SAMPLE_MTN = `Payment received for GHS 1,200.00 from KWAME ASANTE Current Balance: GHS 3,450.00 . Available Balance: GHS 3,450.00 . Reference: January salary. Transaction ID: 76712833868. TRANSACTION FEE: 0.00
 Payment received for GHS 500.00 from AMA MENSAH Current Balance: GHS 3,370.00 . Available Balance: GHS 3,370.00 . Reference: freelance work. Transaction ID: 76712833869. TRANSACTION FEE: 0.00
@@ -713,7 +553,7 @@ function resetSample() {
   document.getElementById('sms-input').value = getSample();
   document.getElementById('report').classList.remove('visible');
   document.getElementById('status').textContent = '';
-  document.getElementById('status').className = 'status-text';
+  document.getElementById('status').className = 'status';
 }
 
 document.getElementById('telco-select').addEventListener('change', () => {
@@ -723,18 +563,18 @@ document.getElementById('telco-select').addEventListener('change', () => {
 });
 
 async function generateReport() {
-  const btn = document.getElementById('btn-generate');
+  const btn = document.getElementById('btn-go');
   const status = document.getElementById('status');
   const raw = document.getElementById('sms-input').value.trim();
 
-  if (!raw) { status.textContent = 'Please paste at least one SMS.'; status.className = 'status-text error'; return; }
+  if (!raw) { status.textContent = 'Paste at least one SMS.'; status.className = 'status error'; return; }
 
   const lines = raw.split('\\n').filter(l => l.trim());
-  if (!lines.length) { status.textContent = 'No valid messages found.'; status.className = 'status-text error'; return; }
+  if (!lines.length) { status.textContent = 'No messages found.'; status.className = 'status error'; return; }
 
   btn.disabled = true;
-  status.textContent = `Analyzing ${lines.length} message${lines.length > 1 ? 's' : ''}...`;
-  status.className = 'status-text';
+  status.textContent = 'Analyzing ' + lines.length + ' message' + (lines.length > 1 ? 's' : '') + '...';
+  status.className = 'status';
 
   try {
     const telco = document.getElementById('telco-select').value;
@@ -750,16 +590,16 @@ async function generateReport() {
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      throw new Error(err.detail || err.message || `API returned ${resp.status}`);
+      throw new Error(err.detail || err.message || 'API returned ' + resp.status);
     }
 
     const data = await resp.json();
     renderReport(data);
-    status.textContent = `Generated in ${data.processing_time_ms}ms`;
-    status.className = 'status-text success';
+    status.textContent = data.processing_time_ms + 'ms';
+    status.className = 'status ok';
   } catch (e) {
     status.textContent = e.message;
-    status.className = 'status-text error';
+    status.className = 'status error';
   } finally {
     btn.disabled = false;
   }
@@ -769,159 +609,129 @@ function ghs(n) {
   return 'GHS ' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-const CAT_COLORS = [
-  'var(--blue-500)', 'var(--emerald-500)', 'var(--amber-500)', 'var(--rose-500)',
-  'var(--violet-500)', '#0ea5e9', '#6366f1', '#ec4899', '#14b8a6', '#f97316'
-];
+const COLORS = ['#3B82F6','#0D9373','#F59E0B','#dc2626','#8B5CF6','#0EA5E9','#EC4899','#14B8A6'];
 
 function renderReport(data) {
   const report = document.getElementById('report');
 
-  // ── Data confidence banner ──
+  // ── Confidence ──
   const dc = data.data_confidence || 'medium';
-  const banner = document.getElementById('confidence-banner');
-  const dcMessages = {
-    low: '<i data-lucide="alert-triangle" style="width:16px;height:16px;"></i> <strong>Low confidence</strong> — Limited transaction data. Scores may not be reliable. Add more SMS for a better analysis.',
-    medium: '<i data-lucide="info" style="width:16px;height:16px;"></i> <strong>Medium confidence</strong> — Reasonable data. Add a third month of transactions for higher accuracy.',
-    high: '<i data-lucide="shield-check" style="width:16px;height:16px;"></i> <strong>High confidence</strong> — Sufficient data across multiple months for reliable analysis.',
+  const bar = document.getElementById('confidence-bar');
+  const msgs = {
+    low: 'Low confidence \u2014 Limited data. Add more transactions for reliable scores.',
+    medium: 'Medium confidence \u2014 Reasonable data. A third month would improve accuracy.',
+    high: 'High confidence \u2014 Sufficient data for reliable analysis.',
   };
-  banner.className = `confidence-banner ${dc}`;
-  banner.innerHTML = dcMessages[dc] || dcMessages.medium;
-  banner.style.display = 'flex';
+  bar.className = 'confidence-bar ' + dc;
+  bar.textContent = msgs[dc] || msgs.medium;
 
-  // ── Report meta ──
+  // ── Meta ──
   const summary = data.summary || {};
   const months = data.months || [];
-  const monthRange = months.length
-    ? months.map(m => m.month).filter(m => m !== 'undated').join(' \u2013 ')
-    : '';
-  document.getElementById('report-meta').innerHTML =
-    `<i data-lucide="file-text" style="width:14px;height:14px;"></i> ` +
-    `Analyzed <strong>${summary.transaction_count || 0}</strong> transactions` +
-    (monthRange ? ` across <strong>${months.length}</strong> months (${monthRange})` : '');
+  const range = months.map(m => m.month).filter(m => m !== 'undated').join(' \u2013 ');
+  document.getElementById('meta-line').innerHTML =
+    '<strong>' + (summary.transaction_count || 0) + '</strong> transactions' +
+    (range ? ' across <strong>' + months.length + '</strong> months (' + range + ')' : '');
 
-  // ── Health score ring ──
+  // ── Health score ──
   const score = data.financial_health_score || 0;
-  const ring = document.getElementById('score-ring');
-  const circumference = 326.73;
-  const offset = circumference - (score / 100) * circumference;
-  let scoreColor;
-  if (score >= 70) scoreColor = 'var(--emerald-500)';
-  else if (score >= 45) scoreColor = 'var(--amber-500)';
-  else scoreColor = 'var(--rose-500)';
+  const ring = document.getElementById('ring');
+  const circ = 263.89;
+  const offset = circ - (score / 100) * circ;
+  const color = score >= 70 ? '#0D9373' : score >= 45 ? '#F59E0B' : '#dc2626';
 
-  ring.style.stroke = scoreColor;
-  // Trigger animation
-  requestAnimationFrame(() => {
-    ring.style.strokeDashoffset = offset;
-  });
+  ring.style.stroke = color;
+  requestAnimationFrame(() => { ring.style.strokeDashoffset = offset; });
 
-  document.getElementById('score-text').textContent = score;
-  document.getElementById('score-text').style.color = scoreColor;
-  const verdict = score >= 70 ? 'Healthy' : score >= 45 ? 'Fair' : 'Needs Attention';
-  const verdictEl = document.getElementById('score-verdict');
-  verdictEl.textContent = verdict;
-  verdictEl.style.color = scoreColor;
+  const numEl = document.getElementById('score-num');
+  numEl.textContent = score;
+  numEl.style.color = color;
+  const label = score >= 70 ? 'Healthy' : score >= 45 ? 'Fair' : 'Needs Attention';
+  const labelEl = document.getElementById('score-label');
+  labelEl.textContent = label;
+  labelEl.style.color = color;
 
-  // ── KPI cards ──
+  // ── KPIs ──
   const sa = data.savings_analysis || {};
-  document.getElementById('kpi-grid').innerHTML = [
-    { icon: 'trending-up', label: 'Total Income', value: ghs(sa.total_income || 0), cls: 'positive', sub: `${months.length} month${months.length !== 1 ? 's' : ''}` },
-    { icon: 'trending-down', label: 'Total Expenses', value: ghs(sa.total_expenses || 0), cls: 'negative', sub: `${summary.transaction_count || 0} transactions` },
-    { icon: 'wallet', label: 'Net Savings', value: ghs(sa.net_savings || 0), cls: (sa.net_savings || 0) >= 0 ? 'positive' : 'negative', sub: 'Income minus expenses' },
-    { icon: 'percent', label: 'Savings Rate', value: (sa.savings_rate || 0).toFixed(1) + '%', cls: (sa.savings_rate || 0) >= 10 ? 'positive' : 'negative', sub: sa.savings_rate >= 20 ? 'Excellent' : sa.savings_rate >= 10 ? 'Good' : 'Below target' },
-  ].map(k => `
-    <div class="kpi">
-      <div class="kpi-label"><i data-lucide="${k.icon}" style="width:12px;height:12px;"></i> ${k.label}</div>
-      <div class="kpi-value ${k.cls}">${k.value}</div>
-      <div class="kpi-sub">${k.sub}</div>
-    </div>
-  `).join('');
+  document.getElementById('kpis').innerHTML = [
+    { l: 'Total Income', v: ghs(sa.total_income || 0), c: 'green', n: months.length + ' month' + (months.length !== 1 ? 's' : '') },
+    { l: 'Total Expenses', v: ghs(sa.total_expenses || 0), c: 'red', n: (summary.transaction_count || 0) + ' transactions' },
+    { l: 'Net Savings', v: ghs(sa.net_savings || 0), c: (sa.net_savings || 0) >= 0 ? 'green' : 'red', n: 'Income minus expenses' },
+    { l: 'Savings Rate', v: (sa.savings_rate || 0).toFixed(1) + '%', c: (sa.savings_rate || 0) >= 10 ? 'green' : 'red', n: sa.savings_rate >= 20 ? 'Excellent' : sa.savings_rate >= 10 ? 'Good' : 'Below target' },
+  ].map(k => '<div class="kpi">' +
+    '<div class="kpi-label">' + k.l + '</div>' +
+    '<div class="kpi-value ' + k.c + '">' + k.v + '</div>' +
+    '<div class="kpi-note">' + k.n + '</div>' +
+  '</div>').join('');
 
-  // ── Monthly breakdown table ──
-  const tbody = document.querySelector('#month-table tbody');
+  // ── Monthly table ──
+  const tbody = document.querySelector('#months-table tbody');
   tbody.innerHTML = months.map(m => {
     const rate = m.savings_rate || 0;
-    const barColor = rate >= 20 ? 'var(--emerald-500)' : rate >= 0 ? 'var(--amber-500)' : 'var(--rose-500)';
-    const barWidth = Math.min(Math.abs(rate), 100);
-    return `<tr>
-      <td style="font-weight:500;">${m.month}</td>
-      <td>${ghs(m.income)}</td>
-      <td>${ghs(m.expenses)}</td>
-      <td class="${m.net_savings >= 0 ? 'positive' : 'negative'}" style="font-weight:500;">${ghs(m.net_savings)}</td>
-      <td>
-        <div class="rate-bar-cell">
-          <span>${rate.toFixed(1)}%</span>
-          <div class="rate-bar-bg"><div class="rate-bar-fill" style="width:${barWidth}%;background:${barColor};"></div></div>
-        </div>
-      </td>
-    </tr>`;
+    const bc = rate >= 20 ? '#0D9373' : rate >= 0 ? '#F59E0B' : '#dc2626';
+    const bw = Math.min(Math.abs(rate), 100);
+    return '<tr>' +
+      '<td style="font-weight:500">' + m.month + '</td>' +
+      '<td>' + ghs(m.income) + '</td>' +
+      '<td>' + ghs(m.expenses) + '</td>' +
+      '<td class="' + (m.net_savings >= 0 ? 'green' : 'red') + '" style="font-weight:500">' + ghs(m.net_savings) + '</td>' +
+      '<td><div class="savings-bar"><span>' + rate.toFixed(1) + '%</span>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + bw + '%;background:' + bc + '"></div></div>' +
+      '</div></td>' +
+    '</tr>';
   }).join('');
 
-  // ── Category breakdown ──
+  // ── Categories ──
   const cb = summary.category_breakdown || {};
-  const expenseCats = Object.entries(cb)
-    .filter(([cat]) => ['supplier_payment','merchant_payment','personal_transfer_sent','airtime_data',
-      'utilities','rent','transport','loan_repayment','cash_withdrawal','fee_charge'].includes(cat))
+  const expCats = Object.entries(cb)
+    .filter(([c]) => ['supplier_payment','merchant_payment','personal_transfer_sent','airtime_data',
+      'utilities','rent','transport','loan_repayment','cash_withdrawal','fee_charge'].includes(c))
     .sort((a, b) => b[1].amount - a[1].amount);
 
-  const catSection = document.getElementById('category-section');
-  if (expenseCats.length > 0) {
-    catSection.style.display = '';
-    const maxAmt = Math.max(...expenseCats.map(([, v]) => v.amount));
-    document.getElementById('category-bars').innerHTML = expenseCats.map(([cat, info], i) => {
-      const pct = maxAmt > 0 ? (info.amount / maxAmt * 100) : 0;
-      const color = CAT_COLORS[i % CAT_COLORS.length];
-      const label = cat.replace(/_/g, ' ');
-      return `<div class="cat-bar-row">
-        <div class="cat-label">${label}</div>
-        <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${color};"></div></div>
-        <div class="cat-amount">${ghs(info.amount)}</div>
-        <div class="cat-pct">${info.percentage}%</div>
-      </div>`;
+  const catSec = document.getElementById('cats-section');
+  if (expCats.length) {
+    catSec.style.display = '';
+    const max = Math.max(...expCats.map(([, v]) => v.amount));
+    document.getElementById('cat-bars').innerHTML = expCats.map(([cat, info], i) => {
+      const pct = max > 0 ? (info.amount / max * 100) : 0;
+      return '<div class="cat-row">' +
+        '<div class="cat-name">' + cat.replace(/_/g, ' ') + '</div>' +
+        '<div class="cat-track"><div class="cat-fill" style="width:' + pct + '%;background:' + COLORS[i % COLORS.length] + '"></div></div>' +
+        '<div class="cat-val">' + ghs(info.amount) + '</div>' +
+        '<div class="cat-pct">' + info.percentage + '%</div>' +
+      '</div>';
     }).join('');
   } else {
-    catSection.style.display = 'none';
+    catSec.style.display = 'none';
   }
 
   // ── Insights ──
   const insights = data.insights || [];
-  const insightsSection = document.getElementById('insights-section');
+  const insSec = document.getElementById('insights-section');
   if (insights.length) {
-    insightsSection.style.display = '';
+    insSec.style.display = '';
     document.getElementById('insights-list').innerHTML = insights.map(i =>
-      `<div class="insight-item type-${i.type || ''}">
-        <div class="insight-title">${i.title}</div>
-        <div class="insight-detail">${i.detail}</div>
-      </div>`
+      '<div class="insight">' +
+        '<div class="insight-title">' + i.title + '</div>' +
+        '<div class="insight-detail">' + i.detail + '</div>' +
+      '</div>'
     ).join('');
-  } else {
-    insightsSection.style.display = 'none';
-  }
+  } else { insSec.style.display = 'none'; }
 
   // ── Recommendations ──
   const recs = data.recommendations || [];
-  const recsSection = document.getElementById('recs-section');
+  const recSec = document.getElementById('recs-section');
   if (recs.length) {
-    recsSection.style.display = '';
+    recSec.style.display = '';
     document.getElementById('recs-list').innerHTML = recs.map(r => {
-      const cls = r.priority === 'high' ? 'high' : r.priority === 'medium' ? 'medium' : 'info';
-      return `<div class="insight-item priority-${cls}">
-        <div class="insight-title">
-          <span class="priority-chip ${cls}">${r.priority}</span>
-          ${r.title}
-        </div>
-        <div class="insight-detail">${r.detail}</div>
-      </div>`;
+      const t = r.priority === 'high' ? 'tag-high' : r.priority === 'medium' ? 'tag-medium' : 'tag-info';
+      return '<div class="insight">' +
+        '<div class="insight-title"><span class="insight-tag ' + t + '">' + r.priority + '</span>' + r.title + '</div>' +
+        '<div class="insight-detail">' + r.detail + '</div>' +
+      '</div>';
     }).join('');
-  } else {
-    recsSection.style.display = 'none';
-  }
+  } else { recSec.style.display = 'none'; }
 
-  // Re-init Lucide icons for dynamically inserted elements
-  lucide.createIcons();
-
-  // Show report with animation
   report.classList.add('visible');
   report.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
