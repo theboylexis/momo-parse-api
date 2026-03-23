@@ -11,6 +11,7 @@ Tiers:
 """
 from __future__ import annotations
 
+import logging
 import time
 from collections import defaultdict, deque
 from typing import Annotated
@@ -18,6 +19,8 @@ from typing import Annotated
 from fastapi import Depends, Header, HTTPException, Request, status
 
 from api.auth import get_api_key, get_tier
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
 # In-memory store: key → deque of call timestamps (seconds since epoch)      #
@@ -69,6 +72,7 @@ def rate_limit(request: Request, api_key: Annotated[str, Depends(get_api_key)]):
         store_key = f"{api_key}:{window}"
         if not _sliding_window(store_key, limit, window):
             label = f"{limit} requests per {'minute' if window == 60 else 'day' if window == 86400 else 'month'}"
+            logger.warning("Rate limit hit: %s (%s)", api_key[:8] + "…", label)
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail={

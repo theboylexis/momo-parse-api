@@ -6,6 +6,7 @@ Jobs are stored in-memory. In production, swap for Redis + Celery.
 from __future__ import annotations
 
 import asyncio
+import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -13,6 +14,8 @@ from enum import Enum
 from typing import Any, Optional
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 class JobStatus(str, Enum):
@@ -45,6 +48,7 @@ def create_job(message_count: int, webhook_url: Optional[str] = None) -> Job:
         webhook_url=webhook_url,
     )
     _jobs[job.job_id] = job
+    logger.info("Job %s created (%d messages)", job.job_id, message_count)
     return job
 
 
@@ -56,12 +60,14 @@ def _set_complete(job: Job, result: dict[str, Any]) -> None:
     job.status = JobStatus.COMPLETE
     job.result = result
     job.completed_at = datetime.now(timezone.utc).isoformat()
+    logger.info("Job %s complete", job.job_id)
 
 
 def _set_failed(job: Job, error: str) -> None:
     job.status = JobStatus.FAILED
     job.error = error
     job.completed_at = datetime.now(timezone.utc).isoformat()
+    logger.error("Job %s failed: %s", job.job_id, error)
 
 
 async def _deliver_webhook(webhook_url: str, payload: dict[str, Any]) -> None:
@@ -69,7 +75,7 @@ async def _deliver_webhook(webhook_url: str, payload: dict[str, Any]) -> None:
         async with httpx.AsyncClient(timeout=10.0) as client:
             await client.post(webhook_url, json=payload)
     except Exception:
-        pass  # Webhook delivery is best-effort
+        logger.warning("Webhook delivery failed for %s", webhook_url)
 
 
 async def run_enrich_job(job: Job, messages: list[dict], mode: str = "enrich") -> None:

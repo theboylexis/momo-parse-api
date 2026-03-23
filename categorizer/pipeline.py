@@ -9,9 +9,12 @@ Each layer can override the previous if it has higher confidence.
 """
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 
 from categorizer import counterparty, features, model, rules
+
+logger = logging.getLogger(__name__)
 
 
 def categorize(
@@ -82,6 +85,7 @@ def categorize(
     else:
         slug, conf = "uncategorized", 0.0
 
+    logger.debug("categorize(%s) → %s (%.3f)", tx_type, slug, conf)
     _feedback(counterparty_phone, counterparty_name, slug)
     return slug, round(conf, 3)
 

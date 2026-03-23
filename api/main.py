@@ -9,7 +9,9 @@ Or via the Makefile:
 """
 from __future__ import annotations
 
+import logging
 import os
+import time
 
 import sentry_sdk
 from fastapi import FastAPI, Request, status
@@ -17,7 +19,11 @@ from fastapi.responses import JSONResponse
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
+from api.logging_config import setup_logging
 from api.routes import health, parse, enrich, report, jobs, demo
+
+setup_logging()
+logger = logging.getLogger("api")
 
 # ── Sentry (error monitoring) ─────────────────────────────────────────────────
 # Set SENTRY_DSN env var in production. No-op locally if the var is absent.
@@ -57,6 +63,7 @@ app = FastAPI(
 
 @app.exception_handler(Exception)
 async def global_error_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
@@ -65,6 +72,23 @@ async def global_error_handler(request: Request, exc: Exception):
             "documentation_url": "https://docs.momoparse.com/errors",
         },
     )
+
+
+# ── Request logging middleware ────────────────────────────────────────────────
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    t0 = time.monotonic()
+    response = await call_next(request)
+    duration_ms = round((time.monotonic() - t0) * 1000, 2)
+    logger.info(
+        "%s %s → %s (%.1fms)",
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration_ms,
+    )
+    return response
 
 
 # ── Routers ───────────────────────────────────────────────────────────────────
