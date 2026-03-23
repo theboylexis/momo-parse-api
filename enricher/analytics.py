@@ -215,10 +215,18 @@ def compute_profile(transactions: list[dict[str, Any]]) -> dict[str, Any]:
     score = 0
     cb = summary["category_breakdown"]
 
-    if "sales_revenue" in cb:
+    # Tiered: reward more transactions, not just presence
+    sales_count = cb.get("sales_revenue", {}).get("count", 0)
+    if sales_count >= 3:
         score += 30
-    if "merchant_payment" in cb:
+    elif sales_count >= 1:
         score += 15
+
+    merchant_count = cb.get("merchant_payment", {}).get("count", 0)
+    if merchant_count >= 3:
+        score += 15
+    elif merchant_count >= 1:
+        score += 8
     if summary["unique_counterparties"] >= 10:
         score += 20
     elif summary["unique_counterparties"] >= 5:
@@ -285,6 +293,17 @@ def compute_profile(transactions: list[dict[str, Any]]) -> dict[str, Any]:
             "severity": "high",
         })
 
+    # ── Data confidence ────────────────────────────────────────────────────
+    # Lets API consumers know how much to trust the scores
+    total_tx = summary["transaction_count"]
+    num_months = len(income_values)
+    if num_months >= 3 and total_tx >= 20:
+        data_confidence = "high"
+    elif num_months >= 2 or total_tx >= 5:
+        data_confidence = "medium"
+    else:
+        data_confidence = "low"
+
     return {
         "avg_monthly_income": avg_monthly_income,
         "income_consistency_cv": income_cv,
@@ -294,6 +313,7 @@ def compute_profile(transactions: list[dict[str, Any]]) -> dict[str, Any]:
         "revenue_trend": revenue_trend,
         "risk_signals": risk_signals,
         "months_of_data": len(income_values),
+        "data_confidence": data_confidence,
         "summary": summary,
     }
 
@@ -512,7 +532,10 @@ def compute_report(transactions: list[dict[str, Any]]) -> dict[str, Any]:
                 ),
             })
 
-    # ── Financial health score (0–100) ───────────────────────────────────────
+    # ── Data confidence (from profile) ───────────────────────────────────────
+    profile = compute_profile(transactions)
+    data_confidence = profile["data_confidence"]
+
     health_score = _compute_health_score(
         savings_rate=overall_savings_rate,
         expense_ratio=total_expenses / total_income if total_income > 0 else 1.0,
@@ -530,6 +553,7 @@ def compute_report(transactions: list[dict[str, Any]]) -> dict[str, Any]:
         "savings_analysis": savings_analysis,
         "recommendations": recommendations,
         "financial_health_score": health_score,
+        "data_confidence": data_confidence,
     }
 
 
@@ -568,6 +592,11 @@ def _compute_health_score(
     # Loan burden penalty
     if has_loan_burden:
         score -= 10
+
+    # Low-data penalty: score above 70 requires at least 2 months of data
+    if income_months <= 1:
+        score -= 10
+        score = min(score, 70)
 
     return max(0, min(100, score))
 
