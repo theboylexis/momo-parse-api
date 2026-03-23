@@ -38,7 +38,7 @@ def test_amount_always_non_negative_or_none(sms):
 @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
 def test_telco_always_valid(sms):
     result = p.parse(sms)
-    assert result.telco in {"mtn", "telecel", "airteigo", "unknown"}
+    assert result.telco in {"mtn", "telecel", "unknown"}
 
 
 @given(sms=st.text())

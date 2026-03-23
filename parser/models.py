@@ -5,7 +5,7 @@ from typing import Optional
 @dataclass
 class ParseResult:
     raw_sms: str
-    telco: str                        # mtn | telecel | airteigo | unknown
+    telco: str                        # mtn | telecel | unknown
     tx_type: str                      # transfer_sent | transfer_received | etc.
     template_id: Optional[str]
     confidence: float                 # 1.0 = perfect match, 0.8 = partial, 0.0 = unrecognized

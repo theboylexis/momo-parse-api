@@ -11,7 +11,6 @@ from .config_loader import get_sender_map
 _CONTENT_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"Telecel Cash|Sendi k3k3|TelecelPlayGhana|T-CASH", re.IGNORECASE), "telecel"),
     (re.compile(r"MTN Mobile Money|MobileMoney|downloadMyMoMo|MTN MoMo", re.IGNORECASE), "mtn"),
-    (re.compile(r"AirtelTigo Money", re.IGNORECASE), "airteigo"),
 ]
 
 

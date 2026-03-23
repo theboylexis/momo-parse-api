@@ -23,7 +23,6 @@ def test_sender_id_detection(sender_id, expected_telco):
     ("Telecel Cash", "telecel"),
     ("Sendi k3k3!", "telecel"),
     ("TelecelPlayGhana", "telecel"),
-    ("AirtelTigo Money", "airteigo"),
 ])
 def test_content_pattern_detection(sms_fragment, expected_telco):
     telco, conf = _detector.detect(sms_fragment, sender_id=None)

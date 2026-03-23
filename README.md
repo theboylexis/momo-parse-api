@@ -1,6 +1,6 @@
 # momo-parser — Open-Source MoMo SMS Parser for Ghana
 
-Parse raw Mobile Money SMS messages from MTN, Telecel, and AirtelTigo into structured JSON in one line of Python.
+Parse raw Mobile Money SMS messages from MTN and Telecel into structured JSON in one line of Python.
 
 ```python
 import parser as p
@@ -49,7 +49,6 @@ MoMo SMS messages are unstructured text. Every telco writes them differently. Ev
 |---|---|
 | MTN Mobile Money | Yes |
 | Telecel Cash | Yes |
-| AirtelTigo Money | Yes |
 
 | Transaction type | Slug |
 |---|---|
