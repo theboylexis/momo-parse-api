@@ -114,4 +114,4 @@ app.include_router(demo.router)
 
 @app.get("/", include_in_schema=False)
 def root():
-    return {"message": "MomoParse API v0.1.0 — see /docs"}
+    return {"message": "MomoParse API v0.2.0 — see /docs"}
