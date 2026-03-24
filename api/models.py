@@ -145,6 +145,22 @@ class RiskSignal(BaseModel):
     severity: str  # "low" | "medium" | "high"
 
 
+class FinancialIndexes(BaseModel):
+    savings_rate: float = Field(description="(Income - Expenses) / Income × 100. Standard personal finance metric.")
+    transaction_velocity: float = Field(description="Transactions per day. Proxy for economic activity.")
+    income_stability_index: float = Field(
+        description="Coefficient of variation of monthly income. 0 = perfectly stable, >1 = highly volatile."
+    )
+    counterparty_concentration_hhi: float = Field(
+        description="Herfindahl-Hirschman Index of transaction partners. 0 = diversified, 1 = single counterparty."
+    )
+    expense_volatility: float = Field(
+        description="Normalized std deviation of monthly spending. Lower = more predictable."
+    )
+    composite_health_score: int = Field(description="Weighted composite of all indexes, 0–100.")
+    data_points: Optional[dict] = Field(None, description="Months, transactions, and counterparties used.")
+
+
 class ProfileResponse(BaseModel):
     request_id: str
     api_version: str = "v1"
@@ -161,6 +177,9 @@ class ProfileResponse(BaseModel):
     revenue_trend: Optional[str] = Field(None, description="growing | stable | declining")
     risk_signals: list[RiskSignal] = []
     months_of_data: int = 0
+    financial_indexes: Optional[FinancialIndexes] = Field(
+        None, description="Formalized financial indexes grounded in established methodology."
+    )
     summary: Optional[EnrichSummary] = None
 
 
@@ -205,7 +224,10 @@ class ReportResponse(BaseModel):
     insights: list[Insight] = []
     savings_analysis: Optional[SavingsAnalysis] = None
     recommendations: list[Recommendation] = []
-    financial_health_score: Optional[int] = Field(None, description="0–100 overall financial health score")
+    financial_health_score: Optional[int] = Field(None, description="0–100 composite score from formalized indexes")
+    financial_indexes: Optional[FinancialIndexes] = Field(
+        None, description="Formalized financial indexes grounded in established methodology."
+    )
     summary: Optional[EnrichSummary] = None
 
 

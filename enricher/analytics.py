@@ -2,9 +2,21 @@
 Aggregate analytics computed from a list of parsed+categorized transactions.
 
 Used by both /v1/enrich and /v1/profile.
+
+Financial indexes are grounded in established methodology:
+- Savings Rate: standard personal finance metric (Lusardi & Mitchell, 2014)
+- Transaction Velocity: proxy for economic activity, analogous to CDR frequency
+  used in telco credit scoring (Björkegren & Grissen, 2018)
+- Income Stability Index: coefficient of variation — standard measure of income
+  volatility in labor economics (Gottschalk & Moffitt, 1994)
+- Counterparty Concentration: Herfindahl-Hirschman Index adapted for transaction
+  partners — low concentration signals diversified economic activity
+- Expense Volatility: normalized standard deviation of monthly spending —
+  high volatility correlates with financial stress (Morduch & Schneider, 2017)
 """
 from __future__ import annotations
 
+import math
 import statistics
 from collections import Counter, defaultdict
 from datetime import date, datetime
@@ -304,6 +316,9 @@ def compute_profile(transactions: list[dict[str, Any]]) -> dict[str, Any]:
     else:
         data_confidence = "low"
 
+    # ── Formalized financial indexes ──────────────────────────────────────────
+    financial_indexes = compute_financial_indexes(transactions)
+
     return {
         "avg_monthly_income": avg_monthly_income,
         "income_consistency_cv": income_cv,
@@ -314,6 +329,7 @@ def compute_profile(transactions: list[dict[str, Any]]) -> dict[str, Any]:
         "risk_signals": risk_signals,
         "months_of_data": len(income_values),
         "data_confidence": data_confidence,
+        "financial_indexes": financial_indexes,
         "summary": summary,
     }
 
@@ -532,19 +548,19 @@ def compute_report(transactions: list[dict[str, Any]]) -> dict[str, Any]:
                 ),
             })
 
-    # ── Data confidence (from profile) ───────────────────────────────────────
-    profile = compute_profile(transactions)
-    data_confidence = profile["data_confidence"]
+    # ── Financial indexes & health score ──────────────────────────────────────
+    financial_indexes = compute_financial_indexes(transactions)
+    health_score = financial_indexes["composite_health_score"]
 
-    health_score = _compute_health_score(
-        savings_rate=overall_savings_rate,
-        expense_ratio=total_expenses / total_income if total_income > 0 else 1.0,
-        income_months=len(monthly_income),
-        has_loan_burden=any(
-            r["priority"] == "high" and "loan" in r["title"].lower()
-            for r in recommendations
-        ),
-    )
+    # Data confidence
+    total_tx = summary["transaction_count"]
+    num_months = len(monthly_income)
+    if num_months >= 3 and total_tx >= 20:
+        data_confidence = "high"
+    elif num_months >= 2 or total_tx >= 5:
+        data_confidence = "medium"
+    else:
+        data_confidence = "low"
 
     return {
         "summary": summary,
@@ -553,49 +569,183 @@ def compute_report(transactions: list[dict[str, Any]]) -> dict[str, Any]:
         "savings_analysis": savings_analysis,
         "recommendations": recommendations,
         "financial_health_score": health_score,
+        "financial_indexes": financial_indexes,
         "data_confidence": data_confidence,
+    }
+
+
+def compute_financial_indexes(
+    transactions: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Compute five formalized financial indexes from parsed transactions.
+
+    Each index maps to a known telco credit scoring signal and is grounded
+    in established financial methodology.
+
+    Returns a dict with each index value and a composite health score.
+    """
+    # ── Gather per-month and per-counterparty data ─────────────────────────
+    monthly_income: dict[str, float] = defaultdict(float)
+    monthly_expense: dict[str, float] = defaultdict(float)
+    cp_amounts: dict[str, float] = defaultdict(float)
+    dates: list[date] = []
+
+    for tx in transactions:
+        amount = tx.get("amount") or 0.0
+        d = _parse_date(tx.get("date"))
+        if d:
+            mk = d.strftime("%Y-%m")
+            dates.append(d)
+            if _is_income(tx):
+                monthly_income[mk] += amount
+            elif _is_expense(tx):
+                monthly_expense[mk] += amount
+
+        cp = tx.get("counterparty_phone") or tx.get("counterparty_name")
+        if cp:
+            cp_amounts[cp.strip().upper()] += amount
+
+    total_income = sum(monthly_income.values())
+    total_expenses = sum(monthly_expense.values())
+    income_values = list(monthly_income.values())
+    expense_values = list(monthly_expense.values())
+
+    # ── 1. Savings Rate (%) ────────────────────────────────────────────────
+    # Standard: (Income - Expenses) / Income × 100
+    # Reference: Lusardi & Mitchell (2014), financial literacy literature
+    savings_rate = (
+        round((total_income - total_expenses) / total_income * 100, 2)
+        if total_income > 0
+        else 0.0
+    )
+
+    # ── 2. Transaction Velocity (txns/day) ─────────────────────────────────
+    # Proxy for economic activity — maps to telco CDR frequency
+    # Reference: Björkegren & Grissen (2018), mobile phone credit scoring
+    if dates:
+        days = max((max(dates) - min(dates)).days, 1)
+        tx_velocity = round(len(transactions) / days, 3)
+    else:
+        tx_velocity = 0.0
+
+    # ── 3. Income Stability Index (0–1, lower = more stable) ───────────────
+    # Coefficient of variation of monthly income
+    # Reference: Gottschalk & Moffitt (1994), income volatility measurement
+    if len(income_values) >= 2 and statistics.mean(income_values) > 0:
+        income_stability = round(
+            statistics.stdev(income_values) / statistics.mean(income_values), 3
+        )
+    else:
+        income_stability = 0.0  # insufficient data
+
+    # ── 4. Counterparty Concentration (HHI, 0–1) ──────────────────────────
+    # Herfindahl-Hirschman Index: sum of squared market shares
+    # 1.0 = all transactions with one counterparty (concentrated)
+    # →0 = evenly distributed across many (diversified)
+    # Reference: adapted from antitrust economics (Hirschman, 1964)
+    total_cp_amount = sum(cp_amounts.values())
+    if total_cp_amount > 0 and len(cp_amounts) > 0:
+        hhi = sum(
+            (amt / total_cp_amount) ** 2 for amt in cp_amounts.values()
+        )
+        counterparty_concentration = round(hhi, 3)
+    else:
+        counterparty_concentration = 1.0  # no data = maximally concentrated
+
+    # ── 5. Expense Volatility (0+, lower = more predictable) ───────────────
+    # Normalized std deviation of monthly expenses
+    # High volatility correlates with financial stress
+    # Reference: Morduch & Schneider (2017), income/expense volatility
+    if len(expense_values) >= 2 and statistics.mean(expense_values) > 0:
+        expense_volatility = round(
+            statistics.stdev(expense_values) / statistics.mean(expense_values), 3
+        )
+    else:
+        expense_volatility = 0.0
+
+    # ── Composite Health Score (0–100) ─────────────────────────────────────
+    # Weighted combination of all five indexes, each normalized to 0–100
+    num_months = len(set(monthly_income) | set(monthly_expense))
+
+    health_score = _compute_health_score(
+        savings_rate=savings_rate,
+        tx_velocity=tx_velocity,
+        income_stability=income_stability,
+        counterparty_concentration=counterparty_concentration,
+        expense_volatility=expense_volatility,
+        num_months=num_months,
+    )
+
+    return {
+        "savings_rate": savings_rate,
+        "transaction_velocity": tx_velocity,
+        "income_stability_index": income_stability,
+        "counterparty_concentration_hhi": counterparty_concentration,
+        "expense_volatility": expense_volatility,
+        "composite_health_score": health_score,
+        "data_points": {
+            "months": num_months,
+            "transactions": len(transactions),
+            "counterparties": len(cp_amounts),
+        },
     }
 
 
 def _compute_health_score(
     *,
     savings_rate: float,
-    expense_ratio: float,
-    income_months: int,
-    has_loan_burden: bool,
+    tx_velocity: float,
+    income_stability: float,
+    counterparty_concentration: float,
+    expense_volatility: float,
+    num_months: int,
 ) -> int:
-    """Simple 0–100 financial health score."""
-    score = 50  # baseline
+    """
+    Composite financial health score (0–100) derived from five formalized
+    indexes.  Each index is normalized to a 0–100 sub-score, then combined
+    with weights reflecting relative importance for mobile money users.
 
-    # Savings rate contribution (+/- up to 25 points)
-    if savings_rate >= 20:
-        score += 25
-    elif savings_rate >= 10:
-        score += 15
-    elif savings_rate >= 0:
-        score += 5
-    else:
-        score -= 15  # negative savings
+    Weights:
+      Savings Rate             30%  — strongest predictor of financial resilience
+      Income Stability         25%  — maps to telco top-up consistency scoring
+      Expense Volatility       20%  — spending predictability
+      Counterparty Diversity   15%  — economic breadth signal
+      Transaction Velocity     10%  — activity level baseline
 
-    # Expense ratio contribution (+/- up to 15 points)
-    if expense_ratio <= 0.70:
-        score += 15
-    elif expense_ratio <= 0.85:
-        score += 5
-    elif expense_ratio > 1.0:
-        score -= 15
+    Low-data penalty: score capped at 70 with <2 months of data.
+    """
+    # ── Normalize each index to 0–100 ──────────────────────────────────────
 
-    # Income consistency (+10 for multi-month data)
-    if income_months >= 3:
-        score += 10
+    # Savings rate: -50% → 0, 0% → 40, 10% → 60, 20% → 80, 30%+ → 100
+    sr_score = max(0, min(100, 40 + savings_rate * 2))
 
-    # Loan burden penalty
-    if has_loan_burden:
-        score -= 10
+    # Income stability (CV): 0 → 100 (perfect), 0.5 → 50, 1.0+ → 0
+    is_score = max(0, min(100, 100 - income_stability * 100))
 
-    # Low-data penalty: score above 70 requires at least 2 months of data
-    if income_months <= 1:
-        score -= 10
+    # Expense volatility (CV): 0 → 100, 0.5 → 50, 1.0+ → 0
+    ev_score = max(0, min(100, 100 - expense_volatility * 100))
+
+    # Counterparty concentration (HHI): 0 → 100 (diversified), 1 → 0
+    cc_score = max(0, min(100, round((1 - counterparty_concentration) * 100)))
+
+    # Transaction velocity: 0 → 0, 0.5/day → 50, 1+/day → 100
+    tv_score = max(0, min(100, round(tx_velocity * 100)))
+
+    # ── Weighted composite ─────────────────────────────────────────────────
+    composite = (
+        sr_score * 0.30
+        + is_score * 0.25
+        + ev_score * 0.20
+        + cc_score * 0.15
+        + tv_score * 0.10
+    )
+
+    score = round(composite)
+
+    # Low-data penalty
+    if num_months <= 1:
+        score = max(0, score - 10)
         score = min(score, 70)
 
     return max(0, min(100, score))

@@ -25,6 +25,7 @@ from api.models import (
     EnrichRequest,
     EnrichResponse,
     EnrichSummary,
+    FinancialIndexes,
     ProfileResponse,
     RiskSignal,
     new_request_id,
@@ -206,5 +207,6 @@ async def profile(
         revenue_trend=data["revenue_trend"],
         risk_signals=[RiskSignal(**rs) for rs in data["risk_signals"]],
         months_of_data=data["months_of_data"],
+        financial_indexes=FinancialIndexes(**data["financial_indexes"]),
         summary=_build_enrich_summary(data["summary"]),
     )
