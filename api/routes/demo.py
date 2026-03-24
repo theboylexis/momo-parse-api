@@ -96,7 +96,7 @@ _HTML = """\
     font-weight: 600;
     letter-spacing: -0.02em;
   }
-  .topbar-nav { display: flex; gap: 20px; align-items: center; }
+  .topbar-nav { display: flex; gap: 16px; align-items: center; }
   .topbar-nav a {
     font-size: 13px;
     color: #666;
@@ -324,7 +324,11 @@ _HTML = """\
   }
 
   /* ── Table ──────────────────────────────── */
-  table { width: 100%; border-collapse: collapse; }
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table { width: 100%; border-collapse: collapse; min-width: 420px; }
   thead th {
     text-align: left;
     font-size: 11px;
@@ -332,14 +336,18 @@ _HTML = """\
     color: #999;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    padding: 0 0 8px;
+    padding: 0 8px 8px 0;
     border-bottom: 1px solid #e5e5e5;
+    white-space: nowrap;
   }
+  thead th:last-child { padding-right: 0; }
   tbody td {
-    padding: 10px 0;
+    padding: 10px 8px 10px 0;
     font-size: 13px;
     border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap;
   }
+  tbody td:last-child { padding-right: 0; }
   tbody tr:last-child td { border-bottom: none; }
   .savings-bar {
     display: inline-flex;
@@ -353,6 +361,13 @@ _HTML = """\
     overflow: hidden;
   }
   .bar-fill { height: 100%; border-radius: 2px; }
+
+  @media (max-width: 480px) {
+    table { font-size: 12px; }
+    thead th { font-size: 10px; padding: 0 6px 6px 0; }
+    tbody td { padding: 8px 6px 8px 0; font-size: 12px; }
+    .bar-track { width: 30px; }
+  }
 
   /* ── Category bars ─────────────────────── */
   .cat-row {
@@ -377,6 +392,7 @@ _HTML = """\
     background: #f0f0f0;
     border-radius: 4px;
     overflow: hidden;
+    min-width: 40px;
   }
   .cat-fill {
     height: 100%;
@@ -397,6 +413,13 @@ _HTML = """\
     font-size: 12px;
     color: #999;
     flex-shrink: 0;
+  }
+
+  @media (max-width: 480px) {
+    .cat-row { gap: 8px; }
+    .cat-name { width: 90px; font-size: 12px; }
+    .cat-val { width: 70px; font-size: 12px; }
+    .cat-pct { width: 32px; font-size: 11px; }
   }
 
   /* ── Insight list ──────────────────────── */
@@ -443,6 +466,28 @@ _HTML = """\
   }
   .footer a { color: #111; text-decoration: none; }
   .footer a:hover { text-decoration: underline; }
+
+  /* ── Global mobile adjustments ──────────── */
+  @media (max-width: 480px) {
+    .topbar { padding: 0 16px; }
+    .topbar-nav { gap: 12px; }
+    .topbar-nav a { font-size: 12px; }
+    .env-tag { font-size: 10px; padding: 2px 6px; }
+
+    .main { padding: 32px 16px 48px; }
+    .page-title { font-size: 22px; }
+    .page-sub { font-size: 14px; margin-bottom: 24px; }
+
+    textarea { font-size: 16px; height: 150px; }
+
+    .kpi-value { font-size: 18px; }
+    .kpi { padding: 12px 14px; }
+
+    .confidence-bar { font-size: 12px; padding: 8px 12px; }
+
+    .section { margin-bottom: 24px; }
+    .footer { margin-top: 32px; }
+  }
 </style>
 </head>
 <body>
@@ -503,12 +548,14 @@ _HTML = """\
 
     <div class="section" id="months-section">
       <div class="section-title">Monthly Breakdown</div>
-      <table id="months-table">
-        <thead>
-          <tr><th>Month</th><th>Income</th><th>Expenses</th><th>Net</th><th>Rate</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-wrap">
+        <table id="months-table">
+          <thead>
+            <tr><th>Month</th><th>Income</th><th>Expenses</th><th>Net</th><th>Rate</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="section" id="cats-section" style="display:none;">
