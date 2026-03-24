@@ -11,6 +11,16 @@ from .config_loader import get_sender_map
 _CONTENT_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"Telecel Cash|Sendi k3k3|TelecelPlayGhana|T-CASH", re.IGNORECASE), "telecel"),
     (re.compile(r"MTN Mobile Money|MobileMoney|downloadMyMoMo|MTN MoMo", re.IGNORECASE), "mtn"),
+    # Brandless MTN templates: "Payment received/made ... Transaction ID ... TRANSACTION FEE"
+    # These lack any MTN branding but the field layout is unique to MTN MoMo
+    (re.compile(
+        r"Payment (?:received|made) for GHS .+?"
+        r"Current Balance: GHS .+?"
+        r"Available Balance: GHS .+?"
+        r"Transaction ID: \d+\.\s*(?:TRANSACTION FEE|Fee charged)",
+    ), "mtn"),
+    # Cash Out / Cash In — MTN-specific openers
+    (re.compile(r"Cash (?:Out made|In received) for GHS", re.IGNORECASE), "mtn"),
 ]
 
 
