@@ -323,6 +323,56 @@ _HTML = """\
     border-bottom: 1px solid #e5e5e5;
   }
 
+  /* ── Indexes ───────────────────────────── */
+  .indexes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .idx-card {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .idx-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .idx-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111;
+  }
+  .idx-desc {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+    line-height: 1.3;
+  }
+  .idx-bar {
+    height: 3px;
+    background: #e5e5e5;
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .idx-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: #0D9373;
+    transition: width 0.6s ease;
+  }
+  .indexes-note {
+    font-size: 11px;
+    color: #999;
+    margin-top: 10px;
+    line-height: 1.4;
+  }
+
   /* ── Table ──────────────────────────────── */
   .table-wrap {
     overflow-x: auto;
@@ -558,6 +608,12 @@ _HTML = """\
       </div>
     </div>
 
+    <div class="section" id="indexes-section" style="display:none;">
+      <div class="section-title">Financial Indexes</div>
+      <div class="indexes-grid" id="indexes-grid"></div>
+      <div class="indexes-note" id="indexes-note"></div>
+    </div>
+
     <div class="section" id="cats-section" style="display:none;">
       <div class="section-title">Spending by Category</div>
       <div id="cat-bars"></div>
@@ -727,6 +783,34 @@ function renderReport(data) {
       '</div></td>' +
     '</tr>';
   }).join('');
+
+  // ── Financial Indexes ──
+  const fi = data.financial_indexes || null;
+  const idxSec = document.getElementById('indexes-section');
+  if (fi) {
+    idxSec.style.display = '';
+    const idxs = [
+      { k: 'savings_rate', l: 'Savings Rate', v: fi.savings_rate.toFixed(1) + '%', d: 'Income minus expenses over income', pct: Math.max(0, Math.min(100, 40 + fi.savings_rate * 2)) },
+      { k: 'income_stability', l: 'Income Stability', v: fi.income_stability_index.toFixed(3), d: 'Lower is more stable (CV)', pct: Math.max(0, 100 - fi.income_stability_index * 100) },
+      { k: 'expense_volatility', l: 'Expense Volatility', v: fi.expense_volatility.toFixed(3), d: 'Lower is more predictable', pct: Math.max(0, 100 - fi.expense_volatility * 100) },
+      { k: 'counterparty_hhi', l: 'Counterparty Diversity', v: fi.counterparty_concentration_hhi.toFixed(3), d: 'HHI \u2014 lower is more diversified', pct: (1 - fi.counterparty_concentration_hhi) * 100 },
+      { k: 'tx_velocity', l: 'Transaction Velocity', v: fi.transaction_velocity.toFixed(2) + '/day', d: 'Economic activity proxy', pct: Math.min(100, fi.transaction_velocity * 100) },
+    ];
+    document.getElementById('indexes-grid').innerHTML = idxs.map(ix =>
+      '<div class="idx-card">' +
+        '<div class="idx-label">' + ix.l + '</div>' +
+        '<div class="idx-value">' + ix.v + '</div>' +
+        '<div class="idx-bar"><div class="idx-bar-fill" style="width:' + Math.max(0, Math.min(100, ix.pct)).toFixed(0) + '%"></div></div>' +
+        '<div class="idx-desc">' + ix.d + '</div>' +
+      '</div>'
+    ).join('');
+    const dp = fi.data_points || {};
+    document.getElementById('indexes-note').textContent =
+      'Based on ' + (dp.transactions || 0) + ' transactions across ' +
+      (dp.months || 0) + ' month(s) with ' + (dp.counterparties || 0) + ' unique counterparties.';
+  } else {
+    idxSec.style.display = 'none';
+  }
 
   // ── Categories ──
   const cb = summary.category_breakdown || {};
