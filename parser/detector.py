@@ -21,6 +21,11 @@ _CONTENT_PATTERNS: list[tuple[re.Pattern, str]] = [
     ), "mtn"),
     # Cash Out / Cash In — MTN-specific openers
     (re.compile(r"Cash (?:Out made|In received) for GHS", re.IGNORECASE), "mtn"),
+    # Service payments — "Payment for GHS... Transaction Id..." (no "made"/"received")
+    # Covers BluPay, CAL Bank Push, MTN BUNDLE, bills, etc.
+    (re.compile(
+        r"^Payment for GHS.+?Current Balance: GHS.+?Transaction Id"
+    ), "mtn"),
 ]
 
 
