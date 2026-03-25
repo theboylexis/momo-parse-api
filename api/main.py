@@ -16,7 +16,8 @@ from contextlib import asynccontextmanager
 
 import sentry_sdk
 from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import HTMLResponse, JSONResponse
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
@@ -50,6 +51,35 @@ async def _lifespan(app: FastAPI):
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
+_SWAGGER_CSS = """
+    body { background: #fafafa; }
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info hgroup.main a { display: none; }
+    .swagger-ui,
+    .swagger-ui .info .title,
+    .swagger-ui .opblock-tag,
+    .swagger-ui .opblock .opblock-summary-description,
+    .swagger-ui .opblock .opblock-summary-operation-id,
+    .swagger-ui .opblock-description-wrapper p,
+    .swagger-ui .response-col_description__inner p,
+    .swagger-ui .parameter__name,
+    .swagger-ui table thead tr th,
+    .swagger-ui .model-title,
+    .swagger-ui .model { font-family: 'Inter', -apple-system, sans-serif !important; }
+    .swagger-ui .info .title { color: #111; font-weight: 700; }
+    .swagger-ui .info .description p { color: #444; }
+    .swagger-ui .scheme-container { background: #fafafa; border-bottom: 1px solid #e5e5e5; box-shadow: none; }
+    .swagger-ui .opblock.opblock-get .opblock-summary-method { background: #0d9488; }
+    .swagger-ui .opblock.opblock-post .opblock-summary-method { background: #111; }
+    .swagger-ui .opblock.opblock-get { border-color: #0d9488; background: rgba(13,148,136,0.03); }
+    .swagger-ui .opblock.opblock-post { border-color: #111; background: rgba(0,0,0,0.02); }
+    .swagger-ui .btn.execute { background: #111; border-color: #111; }
+    .swagger-ui .btn.execute:hover { background: #333; }
+    .swagger-ui .btn.authorize { color: #0d9488; border-color: #0d9488; }
+    .swagger-ui .btn.authorize svg { fill: #0d9488; }
+    .swagger-ui .response-col_status .response-undocumented { color: #0d9488; }
+"""
+
 app = FastAPI(
     title="MomoParse API",
     summary="Transaction intelligence for Mobile Money SMS",
@@ -64,7 +94,7 @@ app = FastAPI(
     version="0.2.0",
     contact={"name": "MomoParse", "email": "hello@momoparse.com"},
     license_info={"name": "Proprietary"},
-    docs_url="/docs",
+    docs_url=None,
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     lifespan=_lifespan,
@@ -111,6 +141,30 @@ app.include_router(enrich.router, prefix="/v1")
 app.include_router(report.router, prefix="/v1")
 app.include_router(jobs.router, prefix="/v1")
 app.include_router(demo.router)
+
+
+# ── Custom Swagger UI ─────────────────────────────────────────────────────────
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui() -> HTMLResponse:
+    html = get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=f"{app.title} — docs",
+        swagger_ui_parameters={
+            "defaultModelsExpandDepth": -1,
+            "docExpansion": "list",
+            "filter": True,
+            "syntaxHighlight.theme": "monokai",
+        },
+    )
+    # Inject Inter font + custom CSS before </head>
+    inject = (
+        '<link rel="preconnect" href="https://fonts.googleapis.com">'
+        '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">'
+        f"<style>{_SWAGGER_CSS}</style>"
+    )
+    styled = html.body.decode().replace("</head>", f"{inject}</head>")
+    return HTMLResponse(styled)
 
 
 # ── Root redirect ─────────────────────────────────────────────────────────────
