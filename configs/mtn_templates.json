@@ -7,7 +7,7 @@
       "tx_type": "transfer_sent",
       "description": "Old format: no period after counterparty name, Fee charged: GHSx.xx",
       "example": "Payment made for GHS 20.00 to LOUISA BOATENG Current Balance: GHS 1037.64 . Available Balance: GHS 1037.64 Reference: n. Transaction ID: 76664093335. Fee charged: GHS0.00 Tax charged: 0.",
-      "pattern": "^Payment made for GHS (?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>[A-Z][^.]+?) Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)[\\s.]+Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\.\\s*Transaction ID:\\s*(?P<tx_id>\\d+)\\.\\s*Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
+      "pattern": "^Payment made for GHS (?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>[A-Za-z][^.]+?) Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)[\\s.]+Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\.\\s*Transaction ID:\\s*(?P<tx_id>\\d+)\\.\\s*Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
       "fields": {
         "amount": "group:amount",
         "counterparty_name": "group:counterparty_name",
@@ -26,7 +26,7 @@
       "tx_type": "transfer_sent",
       "description": "Payment to business: phone number embedded after business name, no separator",
       "example": "Payment made for GHS 62.50 to ROYAL ROSANT VENTURES 233241880380. Current Balance: GHS 7,411.57. Available Balance: GHS 7,411.57. Reference: 2. Transaction ID: 76919434871. Fee charged: GHS 0.62 TAX charged: GHS 0.00.",
-      "pattern": "^Payment made for GHS (?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>[A-Z][A-Z\\s]+?) (?P<counterparty_phone>23[30]\\d{9}|0\\d{9})\\. Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)\\.\\s*Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\. Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
+      "pattern": "^Payment made for GHS (?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>[A-Za-z][A-Za-z\\s'.\\-&]+?) (?P<counterparty_phone>233\\d{9}|0\\d{9})\\. Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)\\.\\s*Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\. Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
       "fields": {
         "amount": "group:amount",
         "counterparty_name": "group:counterparty_name",
@@ -45,7 +45,7 @@
       "tx_type": "transfer_sent",
       "description": "New format: period after counterparty name, TAX charged: GHS 0.00, comma-separated balance",
       "example": "Payment made for GHS 35.00 to ERNESTINA ANDOH. Current Balance: GHS 1,037.64. Available Balance: GHS 1,037.64. Reference: 1. Transaction ID: 76289975115. Fee charged: GHS 0.00 TAX charged: GHS 0.00.",
-      "pattern": "^Payment made for GHS (?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>[A-Z][^.]+?)\\. Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)\\.\\s*Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\. Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
+      "pattern": "^Payment made for GHS (?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>[A-Za-z][^.]+?)\\. Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)\\.\\s*Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\. Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
       "fields": {
         "amount": "group:amount",
         "counterparty_name": "group:counterparty_name",
@@ -64,7 +64,7 @@
       "tx_type": "transfer_received",
       "description": "Payment received from another MoMo user, with optional network source in reference",
       "example": "Payment received for GHS 41.00 from SAMUEL NANA AGYEI ASANTE Current Balance: GHS 7445.59 . Available Balance: GHS 7445.59. Reference: 1. Transaction ID: 76982067554. TRANSACTION FEE: 0.00",
-      "pattern": "^Payment received for GHS (?P<amount>[\\d,]+\\.?\\d*) from (?P<counterparty_name>[A-Za-z][A-Za-z\\s]+?)\\s+Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)[\\s.]+Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\.\\s*TRANSACTION FEE:\\s*(?P<fee>[\\d.]+)",
+      "pattern": "^Payment received for GHS (?P<amount>[\\d,]+\\.?\\d*) from (?P<counterparty_name>[A-Za-z][A-Za-z\\s'.\\-&]+?)\\s+Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)[\\s.]+Available Balance:.*?Reference:\\s*(?P<reference>.*?)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\.\\s*(?:TRANSACTION FEE|Fee charged):\\s*(?P<fee>[\\d.]+)",
       "fields": {
         "amount": "group:amount",
         "counterparty_name": "group:counterparty_name",
@@ -83,7 +83,7 @@
       "tx_type": "cash_out",
       "description": "Cash withdrawal at an agent or institution",
       "example": "Cash Out made for GHS200.00 to BOAFO MICROFINANCE LIMITED. Current Balance: GHS572.58 Financial Transaction Id: 76785458115. Cash-out fee is charged automatically from your MTN MoMo wallet. Please do not pay any fees to the Agent. Thank you for using MTN MobileMoney. Fee charged: GHS2.00.",
-      "pattern": "^Cash Out made for GHS(?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>.+?)\\. Current Balance: GHS(?P<balance>[\\d,]+\\.?\\d*)[\\s.]*Financial Transaction Id:\\s*(?P<tx_id>\\d+).*?Fee charged:\\s*GHS(?P<fee>[\\d.]+)",
+      "pattern": "^Cash Out made for GHS\\s*(?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>.+?)\\. Current Balance: GHS\\s*(?P<balance>[\\d,]+\\.?\\d*)[\\s.]*Financial Transaction Id:\\s*(?P<tx_id>\\d+).*?Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
       "fields": {
         "amount": "group:amount",
         "counterparty_name": "group:counterparty_name",
@@ -138,7 +138,7 @@
       "tx_type": "bill_payment",
       "description": "Generic service payment: bank push, insurance, data bundles, utilities — 'Payment for' opener (no 'made')",
       "example": "Payment for GHS2700.00 to CAL Bank Push.Current Balance: GHS 4745.59. Transaction Id: 76986046852. Fee charged: GHS0.00,Tax Charged 0.",
-      "pattern": "^Payment for GHS(?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>.+?)[.\\s]+Current Balance: GHS (?P<balance>[\\d,]+\\.?\\d*)[.\\s]+Transaction Id[:\\s]*(?P<tx_id>\\d+)[.\\s]+Fee charged:\\s*GHS(?P<fee>[\\d.]+)",
+      "pattern": "^Payment for GHS\\s*(?P<amount>[\\d,]+\\.?\\d*) to (?P<counterparty_name>.+?)[.\\s]+Current Balance: GHS\\s*(?P<balance>[\\d,]+\\.?\\d*)[.\\s]+Transaction Id[:\\s]*(?P<tx_id>\\d+)[.\\s]+Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
       "fields": {
         "amount": "group:amount",
         "counterparty_name": "group:counterparty_name",

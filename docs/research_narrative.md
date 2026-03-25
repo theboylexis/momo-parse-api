@@ -12,7 +12,7 @@ This asymmetry has concrete consequences:
 
 - **Service access is determined by hidden algorithms.** XtraTime (airtime advance) limits are set by "loyalty and activeness on the network." Just4U bundle pricing is personalized based on ARPU and usage patterns. The criteria are not disclosed.
 
-- **Financial visibility is absent.** There is no mobile money equivalent of a bank statement export, no API for transaction history, and no standardized data format. The only persistent record of a mobile money transaction is the SMS confirmation delivered to the user's phone.
+- **Financial visibility is limited.** Users can request transaction history via USSD or the telco apps for a subsidized fee, but these exports are raw transaction lists — not structured, categorized, or analyzable. There is no API for transaction history, no standardized data format, and no tools to derive financial insights from the data. The gap is not access to records, but access to *intelligence* derived from those records.
 
 ## 2. The Opportunity
 
