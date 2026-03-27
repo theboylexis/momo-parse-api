@@ -1,8 +1,8 @@
 [![CI](https://github.com/theboylexis/momo-parse-api/actions/workflows/ci.yml/badge.svg)](https://github.com/theboylexis/momo-parse-api/actions/workflows/ci.yml)
 
-# momo-parser — Open-Source MoMo SMS Parser for Ghana
+# MomoParse — User-Owned Financial Intelligence from Mobile Money SMS
 
-Parse raw Mobile Money SMS messages from MTN and Telecel into structured JSON in one line of Python.
+Parse raw Mobile Money SMS messages from MTN and Telecel into structured financial data, categorize transactions with ML, and compute financial health indexes — all from user-owned SMS confirmations.
 
 ```python
 import parser as p
@@ -19,40 +19,58 @@ print(result.confidence)  # 0.97
 
 ---
 
-## What it does
+## The Problem
 
-MoMo SMS messages are unstructured text. Every telco writes them differently. Every transaction type has a different format. This parser handles all of it.
+In Ghana's mobile money market (74.1M wallets, GHS 3.01T annual volume), telcos score users with proprietary algorithms the user never sees. Users generate the data — telcos own the intelligence.
 
-**Input:** Raw SMS string (optionally + sender ID for better telco detection)
-**Output:** Structured `ParseResult` with all financial fields extracted
+MomoParse inverts this: it extracts **6 of 8 telco credit scoring signals** from user-owned SMS data alone, transparently and through an open API.
 
-```json
-{
-  "telco": "telecel",
-  "tx_type": "cash_withdrawal",
-  "amount": 299.58,
-  "currency": "GHS",
-  "balance": 654.03,
-  "fee": 0.0,
-  "counterparty": {
-    "name": "ACCRA TRADERS",
-    "phone": "A11205"
-  },
-  "tx_id": "0000015061132227",
-  "date": "2025-09-10",
-  "time": "13:51:07",
-  "confidence": 0.97
-}
+## Architecture
+
+```
+Raw SMS
+  ↓
+Parser ─────────── 23 regex templates (9 MTN, 14 Telecel)
+  ↓
+ML Categorizer ─── RandomForest, 406 labeled samples, 15 categories
+  ↓
+Financial Indexes ─ 5 formalized indexes → Composite Health Score
+  ↓
+Structured JSON
 ```
 
-## Supported telcos & transaction types
+**Pipeline layers:**
 
-| Telco | Supported |
-|---|---|
-| MTN Mobile Money | Yes |
-| Telecel Cash | Yes |
+| Layer | Method | Purpose |
+|-------|--------|---------|
+| Parser | Rule-based (regex templates) | Extract fields: amount, balance, fee, counterparty, date, tx_id |
+| Categorizer | 3-layer (rules → ML → counterparty learning) | Classify into financial categories |
+| Enricher | Statistical analysis | Compute financial indexes and health score |
 
-| Transaction type | Slug |
+## Financial Health Index (MFH)
+
+A single composite score (0–100) combining five formalized financial indexes:
+
+**H = 100 × Σ wᵢ · x̂ᵢ**
+
+| Index | Formula | Weight | Reference |
+|-------|---------|--------|-----------|
+| Savings Rate | (Income − Expenses) / Income | 30% | Lusardi & Mitchell (2014) |
+| Income Stability | σ(income) / μ(income) | 25% | Gottschalk & Moffitt (1994) |
+| Expense Volatility | σ(expenses) / μ(expenses) | 20% | Morduch & Schneider (2017) |
+| Counterparty Concentration | Σ(shareᵢ²) | 15% | Hirschman (1964) |
+| Transaction Velocity | transactions / days | 10% | Björkegren & Grissen (2018) |
+
+Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted indexes (where higher = worse) use (1 − x) so higher always means healthier.
+
+## Supported Telcos & Transaction Types
+
+| Telco | Templates |
+|-------|-----------|
+| MTN Mobile Money | 9 transaction types |
+| Telecel Cash | 14 transaction types |
+
+| Transaction Type | Slug |
 |---|---|
 | Transfer sent | `transfer_sent` |
 | Transfer received | `transfer_received` |
@@ -64,32 +82,13 @@ MoMo SMS messages are unstructured text. Every telco writes them differently. Ev
 | Bank transfer | `bank_transfer` |
 | Wallet balance | `wallet_balance` |
 
-## How it works
+## Validation
 
-The parser runs a 3-stage pipeline:
-
-```
-Raw SMS
-  │
-  ▼
-Stage 1: Telco Detection
-  Keyword + sender-ID signals identify the telco.
-  │
-  ▼
-Stage 2: Template Matching
-  Regex templates for each (telco, tx_type) pair.
-  Best-scoring template wins.
-  │
-  ▼
-Stage 3: Field Extraction
-  Named capture groups extract amount, balance, fee,
-  counterparty, date, time, tx_id, reference.
-  │
-  ▼
-ParseResult (structured dict + confidence score)
-```
-
-Confidence score: `1.0` = perfect match, `0.8` = partial match, `0.0` = unrecognized.
+- **543 tests** passing
+- **100 real Telecel transactions** validated against official statement
+- **80+ real MTN transactions** validated against real SMS
+- **27 statement transaction types** mapped to parser templates
+- Handles branded + unbranded SMS, mixed-case names, fee spacing variants
 
 ## Installation
 
@@ -106,7 +105,7 @@ pip install poetry && poetry install
 python examples/basic_parse.py
 ```
 
-## Quick start
+## Quick Start
 
 ```python
 import parser as p
@@ -135,15 +134,13 @@ result.confidence     # float in [0, 1]
 result.to_dict()
 ```
 
-## Want more?
+## API
 
-The open-source parser handles extraction. The [MomoParse API](https://web-production-5aa38.up.railway.app/docs) adds:
+The [MomoParse API](https://web-production-5aa38.up.railway.app/docs) adds:
 
-- **Categorization** — auto-assigns a financial category (rent, salary, merchant payment, etc.)
+- **Categorization** — auto-assigns financial categories (rent, salary, merchant payment, etc.)
 - **Enrichment** — aggregate analytics from 1,000+ SMS in one call
-- **Financial profiles** — monthly income, expense ratio, business activity score, risk signals
-
-Perfect for fintech apps, lending platforms, and MFIs that need structured financial data from MoMo users.
+- **Financial profiles** — indexes, health score, risk signals
 
 **Free sandbox key:** `sk-sandbox-momoparse` — 100 calls/day, no sign-up.
 
@@ -154,9 +151,15 @@ curl -X POST https://web-production-5aa38.up.railway.app/v1/parse \
   -d '{"sms_text": "YOUR_SMS_HERE"}'
 ```
 
+## Docs
+
+- [ML Benchmark](docs/ml_benchmark.md) — model performance, feature importances, honest limitations
+- [Research Paper Structure](docs/research_paper_structure.md) — planned paper outline
+- [Project Board](https://github.com/users/theboylexis/projects/1) — roadmap and task tracking
+
 ## Contributing
 
-Issues and PRs welcome. The parser templates live in `parser/configs/` — adding a new template is a single JSON object.
+Issues and PRs welcome. Parser templates live in `parser/configs/` — adding a new template is a single JSON object.
 
 ## License
 
