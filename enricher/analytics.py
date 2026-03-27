@@ -692,6 +692,33 @@ def compute_financial_indexes(
     }
 
 
+def _normalize(value: float, low: float, high: float) -> float:
+    """Min-max normalize *value* into [0, 1], clamped at boundaries."""
+    if high == low:
+        return 0.0
+    return max(0.0, min(1.0, (value - low) / (high - low)))
+
+
+# Index normalization bounds — (low, high) defining the 0→1 range.
+# Values outside these bounds are clamped.
+_INDEX_BOUNDS: dict[str, tuple[float, float]] = {
+    "savings_rate":                (-30.0, 50.0),   # -30% → 0, 50% → 1
+    "income_stability":            (1.0, 0.0),      # CV 1.0 → 0, CV 0.0 → 1 (inverted)
+    "expense_volatility":          (1.0, 0.0),      # CV 1.0 → 0, CV 0.0 → 1 (inverted)
+    "counterparty_concentration":  (1.0, 0.0),      # HHI 1.0 → 0, HHI 0.0 → 1 (inverted)
+    "transaction_velocity":        (0.0, 1.0),       # 0 txn/day → 0, 1+ txn/day → 1
+}
+
+# Weights sum to 1.0 — relative importance for mobile money users.
+_INDEX_WEIGHTS: dict[str, float] = {
+    "savings_rate":                0.30,  # strongest predictor of financial resilience
+    "income_stability":            0.25,  # maps to telco top-up consistency scoring
+    "expense_volatility":          0.20,  # spending predictability
+    "counterparty_concentration":  0.15,  # economic breadth signal
+    "transaction_velocity":        0.10,  # activity level baseline
+}
+
+
 def _compute_health_score(
     *,
     savings_rate: float,
@@ -701,47 +728,78 @@ def _compute_health_score(
     expense_volatility: float,
     num_months: int,
 ) -> int:
+    r"""
+    Unified MomoParse Financial Health Index (MFH).
+
+    A single composite score (0–100) combining five formalized financial
+    indexes, each grounded in established literature.
+
+    Unified formula
+    ---------------
+    .. math::
+
+        H = 100 \times \sum_{i=1}^{5} w_i \;\hat{x}_i
+
+    where each normalized sub-score is:
+
+    .. math::
+
+        \hat{x}_i = \text{clamp}_{[0,1]}\!\left(
+            \frac{x_i - x_i^{\min}}{x_i^{\max} - x_i^{\min}}
+        \right)
+
+    Expanded:
+
+    .. math::
+
+        H = 100\bigl[
+            0.30\,\hat{S}
+          + 0.25\,(1 - \hat{V}_I)
+          + 0.20\,(1 - \hat{V}_E)
+          + 0.15\,(1 - C_{\text{HHI}})
+          + 0.10\,\hat{T}
+        \bigr]
+
+    Raw indexes
+    -----------
+    S   = (Income − Expenses) / Income × 100    Savings Rate (%)
+    V_I = σ(monthly income) / μ(monthly income)  Income Volatility (CV)
+    V_E = σ(monthly expense) / μ(monthly expense) Expense Volatility (CV)
+    C   = Σ(share_i²)                            Counterparty Concentration (HHI)
+    T   = transactions / days                     Transaction Velocity (txns/day)
+
+    The (1 − x) terms invert "bad-is-high" indexes so higher always means
+    healthier.  All sub-scores are min-max normalized to [0, 1] before
+    weighting, with bounds defined in ``_INDEX_BOUNDS``.
+
+    Weights (``_INDEX_WEIGHTS``)
+    ----------------------------
+    Savings Rate              30%   Lusardi & Mitchell (2014)
+    Income Stability          25%   Gottschalk & Moffitt (1994)
+    Expense Volatility        20%   Morduch & Schneider (2017)
+    Counterparty Diversity    15%   Hirschman (1964)
+    Transaction Velocity      10%   Björkegren & Grissen (2018)
+
+    Low-data penalty
+    ----------------
+    When fewer than 2 months of data are available, a −10 penalty is applied
+    and the score is capped at 70 to reflect estimation uncertainty.
     """
-    Composite financial health score (0–100) derived from five formalized
-    indexes.  Each index is normalized to a 0–100 sub-score, then combined
-    with weights reflecting relative importance for mobile money users.
+    raw = {
+        "savings_rate": savings_rate,
+        "income_stability": income_stability,
+        "expense_volatility": expense_volatility,
+        "counterparty_concentration": counterparty_concentration,
+        "transaction_velocity": tx_velocity,
+    }
 
-    Weights:
-      Savings Rate             30%  — strongest predictor of financial resilience
-      Income Stability         25%  — maps to telco top-up consistency scoring
-      Expense Volatility       20%  — spending predictability
-      Counterparty Diversity   15%  — economic breadth signal
-      Transaction Velocity     10%  — activity level baseline
-
-    Low-data penalty: score capped at 70 with <2 months of data.
-    """
-    # ── Normalize each index to 0–100 ──────────────────────────────────────
-
-    # Savings rate: -50% → 0, 0% → 40, 10% → 60, 20% → 80, 30%+ → 100
-    sr_score = max(0, min(100, 40 + savings_rate * 2))
-
-    # Income stability (CV): 0 → 100 (perfect), 0.5 → 50, 1.0+ → 0
-    is_score = max(0, min(100, 100 - income_stability * 100))
-
-    # Expense volatility (CV): 0 → 100, 0.5 → 50, 1.0+ → 0
-    ev_score = max(0, min(100, 100 - expense_volatility * 100))
-
-    # Counterparty concentration (HHI): 0 → 100 (diversified), 1 → 0
-    cc_score = max(0, min(100, round((1 - counterparty_concentration) * 100)))
-
-    # Transaction velocity: 0 → 0, 0.5/day → 50, 1+/day → 100
-    tv_score = max(0, min(100, round(tx_velocity * 100)))
-
-    # ── Weighted composite ─────────────────────────────────────────────────
-    composite = (
-        sr_score * 0.30
-        + is_score * 0.25
-        + ev_score * 0.20
-        + cc_score * 0.15
-        + tv_score * 0.10
+    # H = 100 × Σ wᵢ · N(xᵢ, low_i, high_i)
+    composite = sum(
+        _INDEX_WEIGHTS[name] * _normalize(raw[name], *_INDEX_BOUNDS[name])
+        for name in _INDEX_WEIGHTS
     )
 
-    score = round(composite)
+    score = round(composite * 100)
 
     # Low-data penalty
     if num_months <= 1:
