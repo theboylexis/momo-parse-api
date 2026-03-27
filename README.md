@@ -1,3 +1,5 @@
+[![CI](https://github.com/theboylexis/momo-parse-api/actions/workflows/ci.yml/badge.svg)](https://github.com/theboylexis/momo-parse-api/actions/workflows/ci.yml)
+
 # momo-parser — Open-Source MoMo SMS Parser for Ghana
 
 Parse raw Mobile Money SMS messages from MTN and Telecel into structured JSON in one line of Python.
