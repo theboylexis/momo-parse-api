@@ -88,7 +88,7 @@ Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted ind
 - **100 real Telecel transactions** validated against official statement
 - **80+ real MTN transactions** validated against real SMS
 - **27 statement transaction types** mapped to parser templates
-- Handles branded + unbranded SMS, mixed-case names, fee spacing variants
+- Handles multi-service SMS variants, mixed-case names, fee spacing variants
 
 ## Installation
 
@@ -154,7 +154,6 @@ curl -X POST https://web-production-5aa38.up.railway.app/v1/parse \
 ## Docs
 
 - [ML Benchmark](docs/ml_benchmark.md) — model performance, feature importances, honest limitations
-- [Research Paper Structure](docs/research_paper_structure.md) — planned paper outline
 - [Project Board](https://github.com/users/theboylexis/projects/1) — roadmap and task tracking
 
 ## Contributing
