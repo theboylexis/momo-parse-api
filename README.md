@@ -139,7 +139,7 @@ result.to_dict()
 
 ## API
 
-The [MomoParse API](https://web-production-5aa38.up.railway.app/docs) adds:
+The [MomoParse API](https://momo-parse.up.railway.app/docs) adds:
 
 - **Categorization** — auto-assigns financial categories (rent, salary, merchant payment, etc.)
 - **Enrichment** — aggregate analytics from 1,000+ SMS in one call
@@ -148,7 +148,7 @@ The [MomoParse API](https://web-production-5aa38.up.railway.app/docs) adds:
 **Free sandbox key:** `sk-sandbox-momoparse` — 100 calls/day, no sign-up.
 
 ```bash
-curl -X POST https://web-production-5aa38.up.railway.app/v1/parse \
+curl -X POST https://momo-parse.up.railway.app/v1/parse \
   -H "X-API-Key: sk-sandbox-momoparse" \
   -H "Content-Type: application/json" \
   -d '{"sms_text": "YOUR_SMS_HERE"}'
