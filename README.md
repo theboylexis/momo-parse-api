@@ -21,7 +21,7 @@ print(result.confidence)  # 0.97
 
 ## The Problem
 
-In Ghana's mobile money market (74.1M wallets, GHS 3.01T annual volume), telcos score users with proprietary algorithms the user never sees. Users generate the data — telcos own the intelligence.
+In Ghana's mobile money market (74.6M registered wallets, GHS 1.00T in Q1 2025 alone — on track for ~GHS 4T annually), telcos score users with proprietary algorithms the user never sees. Credit scoring is an officially licensed FinTech activity (15% of approved PSPs), yet users generate the data — telcos own the intelligence.
 
 MomoParse inverts this: it extracts **6 of 8 telco credit scoring signals** from user-owned SMS data alone, transparently and through an open API.
 
@@ -88,7 +88,10 @@ Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted ind
 - **100 real Telecel transactions** validated against official statement
 - **80+ real MTN transactions** validated against real SMS
 - **27 statement transaction types** mapped to parser templates
+- Parser covers **~95% of national MoMo transaction volume** by category (per BoG Q1 2025 report)
 - Handles multi-service SMS variants, mixed-case names, fee spacing variants
+
+*Source: Bank of Ghana, FinTech and Innovation Office. FinTech Sector Report: 2025 Q1.*
 
 ## Installation
 
