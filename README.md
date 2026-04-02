@@ -21,7 +21,7 @@ print(result.confidence)  # 0.97
 
 ## The Problem
 
-In Ghana's mobile money market (74.6M registered wallets, GHS 1.00T in Q1 2025 alone — on track for ~GHS 4T annually), telcos score users with proprietary algorithms the user never sees. Credit scoring is an officially licensed FinTech activity (15% of approved PSPs), yet users generate the data — telcos own the intelligence.
+In Ghana's mobile money market (74.6M registered wallets, 23.9M active, GHS 1.00T in Q1 2025 alone — up 74% YoY, on track for ~GHS 4T annually), telcos score users with proprietary algorithms the user never sees. Credit scoring is an officially licensed FinTech activity (15% of 59 approved FinTech entities), yet users generate the data — telcos own the intelligence.
 
 MomoParse inverts this: it extracts **6 of 8 telco credit scoring signals** from user-owned SMS data alone, transparently and through an open API.
 
