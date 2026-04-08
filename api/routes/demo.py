@@ -127,6 +127,105 @@ _HTML = """\
     margin-bottom: 32px;
   }
 
+  /* ── Hero ──────────────────────────────── */
+  .hero {
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .hero-title {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+  .hero-desc {
+    font-size: 16px;
+    color: #555;
+    line-height: 1.6;
+    max-width: 640px;
+    margin-bottom: 20px;
+  }
+  .stats-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .stat-num {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111;
+  }
+  .stat-label {
+    font-size: 13px;
+    color: #888;
+  }
+
+  /* ── Pipeline ─────────────────────────── */
+  .pipeline {
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .pipeline-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .pipeline-steps {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .pipe-step {
+    flex: 1;
+    min-width: 140px;
+    padding: 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    position: relative;
+    background: #fff;
+  }
+  .pipe-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    color: #ccc;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .pipe-num {
+    font-size: 11px;
+    font-weight: 600;
+    color: #0D9373;
+    margin-bottom: 4px;
+  }
+  .pipe-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 4px;
+  }
+  .pipe-desc {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.4;
+  }
+  @media (max-width: 640px) {
+    .pipeline-steps { flex-direction: column; gap: 8px; }
+    .pipe-arrow { transform: rotate(90deg); padding: 4px 0; justify-content: center; }
+  }
+
   /* ── Input ─────────────────────────────── */
   .input-section { margin-bottom: 40px; }
   .input-section label {
@@ -200,6 +299,93 @@ _HTML = """\
   .status { font-size: 13px; color: #999; margin-left: 4px; }
   .status.error { color: #dc2626; }
   .status.ok { color: #0D9373; }
+
+  /* ── Parse Preview ─────────────────────── */
+  .parse-preview {
+    margin-bottom: 32px;
+    display: none;
+  }
+  .parse-preview.visible { display: block; }
+  .parse-preview-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .parse-preview-title .close-btn {
+    font-size: 12px;
+    color: #999;
+    cursor: pointer;
+    background: none;
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: inherit;
+  }
+  .parse-preview-title .close-btn:hover { color: #333; background: #f5f5f5; }
+  .parse-sms {
+    font-size: 12px;
+    color: #666;
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px 6px 0 0;
+    padding: 10px 14px;
+    line-height: 1.5;
+    border-bottom: none;
+  }
+  .parse-json {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    background: #111;
+    color: #e5e5e5;
+    padding: 16px;
+    border-radius: 0 0  6px 6px;
+    overflow-x: auto;
+    white-space: pre;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+  .parse-json .key { color: #7ec8e3; }
+  .parse-json .str { color: #98c379; }
+  .parse-json .num { color: #d19a66; }
+  .parse-json .null { color: #666; }
+  .parse-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .parse-field {
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .parse-field-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+  .parse-field-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+  }
+  .conf-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #E6F5F0;
+    color: #0D9373;
+  }
 
   /* ── Report ────────────────────────────── */
   .report { display: none; }
@@ -525,6 +711,10 @@ _HTML = """\
     .env-tag { font-size: 10px; padding: 2px 6px; }
 
     .main { padding: 32px 16px 48px; }
+    .hero-title { font-size: 24px; }
+    .hero-desc { font-size: 14px; }
+    .stats-row { gap: 16px; }
+    .stat-num { font-size: 17px; }
     .page-title { font-size: 22px; }
     .page-sub { font-size: 14px; margin-bottom: 24px; }
 
@@ -553,12 +743,51 @@ _HTML = """\
     <span class="env-tag">Sandbox</span>
     <a href="/docs">Docs</a>
     <a href="/redoc">Reference</a>
+    <a href="https://github.com/theboylexis/momo-parse-api" target="_blank">GitHub</a>
   </nav>
 </header>
 
 <div class="main">
-  <h1 class="page-title">Financial Report</h1>
-  <p class="page-sub">Paste MoMo SMS messages and get a structured financial breakdown.</p>
+  <div class="hero">
+    <h1 class="hero-title">User-Owned Financial Intelligence from Mobile Money SMS</h1>
+    <p class="hero-desc">
+      MomoParse parses raw MoMo SMS confirmations from MTN and Telecel into structured financial data,
+      categorizes transactions with ML, and computes financial health indexes &mdash; giving users
+      transparent credit intelligence from data they already own.
+    </p>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-num">23</span><span class="stat-label">SMS templates</span></div>
+      <div class="stat"><span class="stat-num">543+</span><span class="stat-label">tests passing</span></div>
+      <div class="stat"><span class="stat-num">~95%</span><span class="stat-label">MoMo volume covered</span></div>
+      <div class="stat"><span class="stat-num">5</span><span class="stat-label">financial indexes</span></div>
+    </div>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipeline-title">How It Works</div>
+    <div class="pipeline-steps">
+      <div class="pipe-step">
+        <div class="pipe-num">01</div>
+        <div class="pipe-name">Parse</div>
+        <div class="pipe-desc">Detect telco, match against 23 regex templates, extract amount, balance, fee, counterparty, date</div>
+      </div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-step">
+        <div class="pipe-num">02</div>
+        <div class="pipe-name">Categorize</div>
+        <div class="pipe-desc">3-layer system: deterministic rules, Random Forest ML model, then counterparty learning</div>
+      </div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-step">
+        <div class="pipe-num">03</div>
+        <div class="pipe-name">Enrich</div>
+        <div class="pipe-desc">Compute 5 financial indexes and a composite health score (0&ndash;100) grounded in academic literature</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title">Try It</h2>
+  <p class="page-sub">Paste MoMo SMS messages below and generate a financial report.</p>
 
   <div class="input-section">
     <label for="sms-input">SMS Messages</label>
@@ -571,9 +800,20 @@ _HTML = """\
         <option value="T-CASH" selected>Telecel Cash</option>
       </select>
       <button class="btn btn-primary" id="btn-go" onclick="generateReport()">Generate report</button>
+      <button class="btn btn-secondary" id="btn-parse" onclick="parseSingle()">Parse first SMS</button>
       <button class="btn btn-secondary" onclick="resetSample()">Reset</button>
       <span class="status" id="status"></span>
     </div>
+  </div>
+
+  <div class="parse-preview" id="parse-preview">
+    <div class="parse-preview-title">
+      <span>Single Parse Result</span>
+      <button class="close-btn" onclick="document.getElementById('parse-preview').classList.remove('visible')">&times; Close</button>
+    </div>
+    <div class="parse-sms" id="parse-sms-text"></div>
+    <div class="parse-json" id="parse-json"></div>
+    <div class="parse-fields" id="parse-fields"></div>
   </div>
 
   <div class="report" id="report">
@@ -631,7 +871,9 @@ _HTML = """\
   </div>
 
   <div class="footer">
-    Built with the <a href="/docs">MomoParse API</a>
+    Built with the <a href="/docs">MomoParse API</a> &middot;
+    <a href="https://github.com/theboylexis/momo-parse-api">Open Source on GitHub</a> &middot;
+    <a href="https://pypi.org/project/momoparse/">pip install momoparse</a>
   </div>
 </div>
 
@@ -664,6 +906,79 @@ document.getElementById('telco-select').addEventListener('change', () => {
   document.getElementById('report').classList.remove('visible');
   document.getElementById('status').textContent = '';
 });
+
+async function parseSingle() {
+  const status = document.getElementById('status');
+  const raw = document.getElementById('sms-input').value.trim();
+  if (!raw) { status.textContent = 'Paste at least one SMS.'; status.className = 'status error'; return; }
+
+  const firstLine = raw.split('\\n').filter(l => l.trim())[0];
+  if (!firstLine) { status.textContent = 'No messages found.'; status.className = 'status error'; return; }
+
+  const btn = document.getElementById('btn-parse');
+  btn.disabled = true;
+  status.textContent = 'Parsing...';
+  status.className = 'status';
+
+  try {
+    const telco = document.getElementById('telco-select').value;
+    const body = { sms_text: firstLine };
+    if (telco !== 'auto') body.sender_id = telco;
+
+    const resp = await fetch('/v1/parse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': 'sk-sandbox-momoparse' },
+      body: JSON.stringify(body),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail || 'API returned ' + resp.status);
+    }
+
+    const data = await resp.json();
+
+    // Show the SMS that was parsed
+    document.getElementById('parse-sms-text').textContent = firstLine;
+
+    // Syntax-highlighted JSON
+    const json = JSON.stringify(data, null, 2);
+    document.getElementById('parse-json').innerHTML = json
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"([^"]+)":/g, '<span class="key">"$1"</span>:')
+      .replace(/: "([^"]*)"/g, ': <span class="str">"$1"</span>')
+      .replace(/: (\\d+\\.?\\d*)/g, ': <span class="num">$1</span>')
+      .replace(/: null/g, ': <span class="null">null</span>');
+
+    // Field cards
+    const fields = [
+      { l: 'Telco', v: data.telco || '—' },
+      { l: 'Type', v: (data.tx_type || '—').replace(/_/g, ' ') },
+      { l: 'Amount', v: data.amount != null ? 'GHS ' + Number(data.amount).toFixed(2) : '—' },
+      { l: 'Balance', v: data.balance != null ? 'GHS ' + Number(data.balance).toFixed(2) : '—' },
+      { l: 'Fee', v: data.fee != null ? 'GHS ' + Number(data.fee).toFixed(2) : '—' },
+      { l: 'Counterparty', v: (data.counterparty && data.counterparty.name) || '—' },
+      { l: 'Category', v: data.category_label || data.category || '—' },
+      { l: 'Confidence', v: '<span class="conf-badge">' + ((data.confidence || 0) * 100).toFixed(0) + '%</span>' },
+    ];
+    document.getElementById('parse-fields').innerHTML = fields.map(f =>
+      '<div class="parse-field">' +
+        '<div class="parse-field-label">' + f.l + '</div>' +
+        '<div class="parse-field-value">' + f.v + '</div>' +
+      '</div>'
+    ).join('');
+
+    document.getElementById('parse-preview').classList.add('visible');
+    document.getElementById('parse-preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    status.textContent = data.processing_time_ms + 'ms';
+    status.className = 'status ok';
+  } catch (e) {
+    status.textContent = e.message;
+    status.className = 'status error';
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 async function generateReport() {
   const btn = document.getElementById('btn-go');
