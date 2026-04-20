@@ -25,6 +25,7 @@ ENV/
 
 # Poetry
 poetry.lock
+poetry.toml
 
 # Environment variables
 .env
@@ -36,12 +37,14 @@ poetry.lock
 .coverage
 htmlcov/
 .tox/
+.hypothesis/
 
 # IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
+.claude/settings.local.json
 
 # OS
 .DS_Store
