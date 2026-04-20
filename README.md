@@ -6,6 +6,8 @@ Parse raw Mobile Money SMS messages from MTN and Telecel into structured financi
 
 **Try it live:** [momo-parse.up.railway.app/demo](https://momo-parse.up.railway.app/demo) · **API docs:** [/docs](https://momo-parse.up.railway.app/docs)
 
+**Author:** Alex Marfo ([@theboylexis](https://github.com/theboylexis)) — sole creator, designer, and maintainer. Portfolio: [alexmarfo.vercel.app](https://alexmarfo.vercel.app) · [Building MomoParse (blog)](https://alexmarfo.vercel.app/blog/building-momo-parse-api)
+
 ### Who this serves
 
 - **Thin-file borrowers** — Ghanaians with no formal bank history but years of MoMo SMS can now demonstrate income stability and repayment capacity to lenders.
@@ -175,4 +177,4 @@ Issues and PRs welcome. Parser templates live in `parser/configs/` — adding a 
 
 ## License
 
-MIT — use freely. The categorization model and enrichment layer are proprietary.
+MIT — Copyright © 2025–2026 Alex Marfo. See [LICENSE](LICENSE).
