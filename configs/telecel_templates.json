@@ -7,7 +7,7 @@
       "tx_type": "transfer_sent",
       "description": "Money sent to MTN or Telecel number — dest_network in message body",
       "example": "0000012289051596 Confirmed. GHS33.50 sent to 0594372553 - ISAAC AKANCHALA on MTN MOBILE MONEY on 2026-03-07 at 09:52:16. Your Telecel Cash balance is GHS259.18. You were charged GHS0.00. Your E-levy charge is GHS0.00. Sending money from Telecel Cash to Telecel Cash remains FREE on the Telecel Play App. Download the App https://bit.ly/TelecelPlayGhana and continue to enjoy the convenience. Reference: 1. Sendi k3k3!",
-      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. GHS(?P<amount>[\\d.]+) sent to (?P<counterparty_phone>[\\d]+) - (?P<counterparty_name>[A-Za-z][A-Za-z\\s'.\\-&]+?) on (?P<dest_network>MTN MOBILE MONEY|TELECEL CASH) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\. You were charged GHS(?P<fee>[\\d.]+)\\. Your E-levy charge is GHS(?P<e_levy>[\\d.]+)\\..*?Reference:\\s*(?P<reference>.*?)\\.\\s*Sendi k3k3!",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. GHS(?P<amount>[\\d.]+) sent to (?P<counterparty_phone>[\\d]+) - (?P<counterparty_name>[A-Za-z][A-Za-z\\s'.\\-&]+?)(?: on (?P<dest_network>MTN MOBILE MONEY|TELECEL CASH))? on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\. You were charged GHS(?P<fee>[\\d.]+)\\. Your E-levy charge is GHS(?P<e_levy>[\\d.]+)\\.(?:[\\s\\S]*?Reference:\\s*(?P<reference>[^.\\n]*?)\\s*\\.)?[\\s\\S]*?Sendi k3k3!$",
       "fields": {
         "tx_id": "group:tx_id",
         "amount": "group:amount",
@@ -21,14 +21,14 @@
         "e_levy": "group:e_levy",
         "reference": "group:reference"
       },
-      "notes": "Some messages end with 'Do more with Telecel Cash!' instead of app promo — pattern handles both via .*? before Reference"
+      "notes": "Handles three real-world variants: (1) dest_network present (old: 'on MTN MOBILE MONEY on <date>'), (2) dest_network absent (2026: 'on <date>' direct — Telecel dropped the network label), (3) Reference placement before or after app promo (2026 shifted Reference earlier), (4) multi-line SMS bodies."
     },
     {
       "id": "telecel_transfer_received_mtn",
       "tx_type": "transfer_received",
       "description": "Inbound transfer from MTN MoMo — reference contains sender phone + name",
       "example": "0000012280187846 Confirmed. You have received GHS252.00 from MTN MOBILE MONEY with transaction reference: Transfer From: 233240590913-CECILIA OWUSU on 2026-03-05 at 15:04:34. Your Telecel Cash balance is GHS293.68. Ref: support money",
-      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. You have received GHS(?P<amount>[\\d.]+) from MTN MOBILE MONEY with transaction reference: Transfer From: (?P<counterparty_phone>[\\d]+)-(?P<counterparty_name>[A-Za-z][A-Za-z\\s'.\\-&]+?) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\. Ref:\\s*(?P<reference>.+)",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. You have received GHS(?P<amount>[\\d.]+) from MTN MOBILE MONEY with transaction reference: Transfer From: (?P<counterparty_phone>[\\d]+)-(?P<counterparty_name>[A-Za-z][A-Za-z\\s'.\\-&]+?)\\s+on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\.\\s+Ref:\\s*(?P<reference>[^.\\n]+)",
       "fields": {
         "tx_id": "group:tx_id",
         "amount": "group:amount",
