@@ -26,7 +26,16 @@ class JSONFormatter(logging.Formatter):
         if record.exc_info and record.exc_info[0] is not None:
             entry["exception"] = self.formatException(record.exc_info)
         # Include extra fields attached by callers
-        for key in ("request_id", "method", "path", "status_code", "duration_ms"):
+        for key in (
+            # HTTP request context
+            "request_id", "method", "path", "status_code", "duration_ms",
+            # Drift telemetry — emitted when the parser falls back to fuzzy.
+            # Aggregating these over a week of traffic shows which templates
+            # need v3 versions.
+            "event", "telco", "template_id", "similarity",
+            "confidence", "captured_fields", "missing_critical_fields",
+            "sms_hash", "sms_length",
+        ):
             val = getattr(record, key, None)
             if val is not None:
                 entry[key] = val

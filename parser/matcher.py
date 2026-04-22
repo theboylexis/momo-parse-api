@@ -12,6 +12,7 @@ from typing import Optional
 
 from .config_loader import load_all_templates
 from .fuzzy import fuzzy_match, FUZZY_CONFIDENCE_CAP
+from .telemetry import emit_fuzzy_fallback
 
 # Critical fields per tx_type, each with a relative importance weight.
 # A transaction is useless without amount; counterparty and balance are needed
@@ -72,6 +73,17 @@ class TemplateMatcher:
         confidence = round(
             min(FUZZY_CONFIDENCE_CAP, similarity) * max(field_score, 0.1), 2
         )
+
+        captured, missing = self._critical_field_split(f_template, f_groups)
+        emit_fuzzy_fallback(
+            telco=telco,
+            template_id=f_template.get("id", "unknown"),
+            similarity=similarity,
+            confidence=confidence,
+            captured_fields=captured,
+            missing_critical_fields=missing,
+            sms_text=sms_text,
+        )
         return f_template, f_groups, confidence, "fuzzy"
 
     def _try_exact(
@@ -117,6 +129,21 @@ class TemplateMatcher:
             w for f, w in weights.items() if self._field_resolves(field_rules.get(f), groups)
         )
         return captured / total if total else 1.0
+
+    def _critical_field_split(
+        self, template: dict, groups: dict
+    ) -> tuple[list[str], list[str]]:
+        """Partition this template's critical fields into (captured, missing)."""
+        weights = _CRITICAL_FIELDS.get(template.get("tx_type", ""), {})
+        field_rules = template.get("fields", {})
+        captured: list[str] = []
+        missing: list[str] = []
+        for field in weights:
+            if self._field_resolves(field_rules.get(field), groups):
+                captured.append(field)
+            else:
+                missing.append(field)
+        return captured, missing
 
     @staticmethod
     def _field_resolves(rule, groups: dict) -> bool:

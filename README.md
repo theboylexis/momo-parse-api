@@ -99,6 +99,7 @@ Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted ind
 - **6,400+ tests** passing — 6,200 synthetic corpus rows + 91 real-SMS corpus + 150 unit/integration tests
 - **Validated against systematic template-drift mutations** — a 131-case harness applies realistic telco drift (verb swaps, currency-symbol drift, field reorder, whitespace bloat, SMS truncation, label abbreviation, promo injection) across every registered template and asserts `amount`, `tx_type`, and `balance` still recover
 - **Fuzzy fallback** — when no regex matches exactly, a token-overlap + generic field regex path recovers partial data with a capped confidence (≤0.6), so the Financial Health Index never silently loses a transaction to format drift
+- **Drift telemetry** — every fuzzy fallback emits a structured `parse.fuzzy_fallback` JSON log line (`template_id`, `missing_critical_fields`, SHA-256 SMS hash — no raw SMS body) so aggregating a week of production logs surfaces exactly which templates need a v3 revision
 - **100 real Telecel transactions** validated against official statement
 - **80+ real MTN transactions** validated against real SMS
 - **27 statement transaction types** mapped to parser templates
