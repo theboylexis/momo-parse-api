@@ -49,6 +49,7 @@ def _to_response(
         tx_type=result.tx_type,
         template_id=result.template_id,
         confidence=result.confidence,
+        match_mode=result.match_mode,
         amount=result.amount,
         currency=result.currency,
         balance=result.balance,

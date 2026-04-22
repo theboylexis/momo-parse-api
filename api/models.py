@@ -58,6 +58,7 @@ class ParseResponse(BaseModel):
     tx_type: str
     template_id: Optional[str] = None
     confidence: float
+    match_mode: str = "exact"
 
     amount: Optional[float] = None
     currency: str = "GHS"

@@ -1,10 +1,8 @@
 """
 Stage 3 — Field Extraction
-Applies field rules from the matched template to pull structured data from the regex match.
+Applies field rules from the matched template to pull structured data from the
+groups dict produced by the matcher (either exact regex or fuzzy fallback).
 """
-import re
-from typing import Optional
-
 from .normalizers import normalize_amount, normalize_phone, normalize_name
 
 _AMOUNT_FIELDS = {"amount", "balance", "fee", "e_levy"}
@@ -13,16 +11,15 @@ _NAME_FIELDS = {"counterparty_name"}
 
 
 class FieldExtractor:
-    def extract(self, template: dict, match: re.Match) -> dict:
+    def extract(self, template: dict, groups: dict) -> dict:
         """
-        Apply the template's field rules to the regex match.
+        Apply the template's field rules to the extracted groups.
 
         Rule types:
-          "group:<name>"   — use the named capture group from the regex
+          "group:<name>"   — use the named capture group from the groups dict
           "literal:<val>"  — hard-code this value regardless of SMS content
           null             — field not present in this template; return None
         """
-        groups = match.groupdict()
         field_rules: dict = template.get("fields", {})
         result: dict = {}
 
@@ -37,7 +34,6 @@ class FieldExtractor:
             else:
                 result[field_name] = None
 
-        # Normalize values
         for f in _AMOUNT_FIELDS:
             if result.get(f) is not None:
                 result[f] = normalize_amount(result[f])

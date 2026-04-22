@@ -1,28 +1,38 @@
 """
 Stage 2 — Template Matching
 Scores each template in the telco's registry against the SMS and returns the best match.
+
+Scoring is a continuous weighted ratio of critical fields captured. A full regex
+match with every critical field present scores 1.0. If no template matches fully,
+a fuzzy fallback picks the nearest template by token overlap and extracts whatever
+fields it can with a capped confidence.
 """
 import re
 from typing import Optional
 
 from .config_loader import load_all_templates
+from .fuzzy import fuzzy_match, FUZZY_CONFIDENCE_CAP
 
-# Fields that MUST be captured for a match to be considered high-confidence
-_CRITICAL_FIELDS: dict[str, list[str]] = {
-    "transfer_sent":     ["amount", "counterparty_name", "balance"],
-    "transfer_received": ["amount", "counterparty_name", "balance"],
-    "merchant_payment":  ["amount", "counterparty_name", "balance"],
-    "bill_payment":      ["amount", "counterparty_name", "balance"],
-    "airtime_purchase":  ["amount", "balance"],
-    "airtime_received":  ["amount", "counterparty_name"],
-    "cash_withdrawal":   ["amount", "counterparty_name", "balance"],
-    "cash_in":           ["amount", "counterparty_name", "balance"],
-    "cash_out":          ["amount", "counterparty_name", "balance"],
-    "bank_transfer":     ["amount", "counterparty_name", "balance"],
-    "deposit_received":  ["amount", "counterparty_name", "balance"],
-    "loan_repayment":    ["amount", "balance"],
-    "interest_received": ["amount", "balance"],
-    "wallet_balance":    ["balance"],
+# Critical fields per tx_type, each with a relative importance weight.
+# A transaction is useless without amount; counterparty and balance are needed
+# for categorization and index computation; date/tx_id are metadata.
+_CRITICAL_FIELDS: dict[str, dict[str, int]] = {
+    "transfer_sent":     {"amount": 3, "counterparty_name": 2, "balance": 2},
+    "transfer_received": {"amount": 3, "counterparty_name": 2, "balance": 2},
+    "merchant_payment":  {"amount": 3, "counterparty_name": 2, "balance": 2},
+    "bill_payment":      {"amount": 3, "counterparty_name": 2, "balance": 2},
+    "airtime_purchase":  {"amount": 3, "balance": 2},
+    "airtime_received":  {"amount": 3, "counterparty_name": 2},
+    "cash_withdrawal":   {"amount": 3, "counterparty_name": 2, "balance": 2},
+    "cash_in":           {"amount": 3, "counterparty_name": 2, "balance": 2},
+    "cash_out":          {"amount": 3, "counterparty_name": 2, "balance": 2},
+    "bank_transfer":     {"amount": 3, "counterparty_name": 2, "balance": 2},
+    "deposit_received":  {"amount": 3, "counterparty_name": 2, "balance": 2},
+    "loan_repayment":    {"amount": 3, "balance": 2},
+    "interest_received": {"amount": 3, "balance": 2},
+    "wallet_balance":    {"balance": 2},
+    "payment_received":  {"amount": 3, "counterparty_name": 2, "balance": 2},
+    "bundle_purchase":   {"amount": 3, "balance": 2},  # telecel-specific; MTN bundles are bill_payment
 }
 
 
@@ -32,22 +42,43 @@ class TemplateMatcher:
 
     def match(
         self, telco: str, sms_text: str
-    ) -> tuple[Optional[dict], Optional[re.Match], float]:
+    ) -> tuple[Optional[dict], dict, float, str]:
         """
-        Returns (template, match_object, confidence).
+        Returns (template, groups, confidence, match_mode).
 
-        Confidence scoring:
-          1.0 — full regex match + all critical fields captured
-          0.9 — full regex match but some critical fields missing
-          0.8 — full regex match, heuristic fill-in needed
-          0.0 — no template matched
+        match_mode:
+          "exact" — a template's full regex matched
+          "fuzzy" — regex failed; nearest template picked by token overlap
+          "none"  — no template identifiable
+
+        confidence is a continuous weighted ratio of critical fields captured.
+        Fuzzy results are capped at FUZZY_CONFIDENCE_CAP so they always rank
+        below a clean exact match.
         """
         if telco not in self._configs:
-            return None, None, 0.0
+            return None, {}, 0.0, "none"
 
         templates = self._configs[telco].get("templates", [])
+
+        best_template, best_groups, best_conf = self._try_exact(templates, sms_text)
+        if best_template is not None:
+            return best_template, best_groups, best_conf, "exact"
+
+        f_template, f_groups, similarity = fuzzy_match(sms_text, templates)
+        if f_template is None:
+            return None, {}, 0.0, "none"
+
+        field_score = self._field_capture_score(f_template, f_groups)
+        confidence = round(
+            min(FUZZY_CONFIDENCE_CAP, similarity) * max(field_score, 0.1), 2
+        )
+        return f_template, f_groups, confidence, "fuzzy"
+
+    def _try_exact(
+        self, templates: list[dict], sms_text: str
+    ) -> tuple[Optional[dict], dict, float]:
         best_template = None
-        best_match = None
+        best_groups: dict = {}
         best_confidence = 0.0
 
         for template in templates:
@@ -56,32 +87,41 @@ class TemplateMatcher:
                 m = re.search(pattern_str, sms_text, re.DOTALL)
             except re.error:
                 continue
-
             if not m:
                 continue
 
-            confidence = self._score(template, m)
+            groups = {k: v for k, v in m.groupdict().items() if v is not None}
+            confidence = self._field_capture_score(template, groups)
             if confidence > best_confidence:
                 best_confidence = confidence
                 best_template = template
-                best_match = m
+                best_groups = groups
 
-        return best_template, best_match, best_confidence
+        return best_template, best_groups, round(best_confidence, 2)
 
-    def _score(self, template: dict, match: re.Match) -> float:
-        """Score a successful regex match based on critical field capture rate."""
+    def _field_capture_score(self, template: dict, groups: dict) -> float:
+        """
+        Weighted ratio of critical fields the template resolves for this tx_type.
+        A field counts as captured if the template rule is a literal (always
+        resolves) or a named group that is present in `groups`. Returns 1.0 when
+        all critical fields are resolvable, 0.0 when none are.
+        """
         tx_type = template.get("tx_type", "")
-        critical = _CRITICAL_FIELDS.get(tx_type, [])
+        weights = _CRITICAL_FIELDS.get(tx_type, {})
+        if not weights:
+            return 1.0
 
-        groups = match.groupdict()
-        captured_critical = sum(
-            1 for f in critical if groups.get(f) is not None
+        field_rules = template.get("fields", {})
+        total = sum(weights.values())
+        captured = sum(
+            w for f, w in weights.items() if self._field_resolves(field_rules.get(f), groups)
         )
+        return captured / total if total else 1.0
 
-        if not critical:
-            return 1.0
-        if captured_critical == len(critical):
-            return 1.0
-        if captured_critical >= len(critical) - 1:
-            return 0.9
-        return 0.8
+    @staticmethod
+    def _field_resolves(rule, groups: dict) -> bool:
+        if isinstance(rule, str) and rule.startswith("literal:"):
+            return True
+        if isinstance(rule, str) and rule.startswith("group:"):
+            return groups.get(rule[6:]) is not None
+        return False

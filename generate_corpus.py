@@ -348,6 +348,22 @@ def tcash_airtime_received():
                 balance=None, fee=0.00, tx_id=tid, reference="", dest_network="telecel")
 
 
+def tcash_airtime_received_v2():
+    tid   = tcash_txid()
+    name  = rname()
+    phone = telecel_phone()
+    amt   = rand_amount(1, 100)
+    dt    = rand_dt()
+
+    sms = (
+        f"{tid} Confirmed. Airtime of GHS{amt:.2f} received from {phone} - {name} on "
+        f"{fdate(dt)} at {ftime(dt)}. Thank you for using Telecel Cash."
+    )
+    return dict(raw_sms=sms, telco="telecel", tx_type="airtime_received",
+                amount=amt, counterparty_name=name, counterparty_phone=phone,
+                balance=None, fee=0.00, tx_id=tid, reference="", dest_network="telecel")
+
+
 def tcash_cash_withdrawal():
     tid   = tcash_txid()
     agent = random.choice(TELECEL_AGENT_CODES)
@@ -359,6 +375,24 @@ def tcash_cash_withdrawal():
     sms = (
         f"{tid} Confirmed. You have withdrawn GHS{amt:.2f} from {agent} - {biz} on "
         f"{fdate(dt)} at {ftime(dt)}. Your Telecel Cash balance is GHS{bal:.2f}."
+    )
+    return dict(raw_sms=sms, telco="telecel", tx_type="cash_withdrawal",
+                amount=amt, counterparty_name=biz, counterparty_phone=agent,
+                balance=bal, fee=0.00, tx_id=tid, reference="", dest_network="agent")
+
+
+def tcash_cash_withdrawal_v2():
+    tid   = tcash_txid()
+    agent = random.choice(TELECEL_AGENT_CODES)
+    biz   = random.choice(BUSINESS_NAMES)
+    amt   = rand_amount(20, 500)
+    dt    = rand_dt()
+    bal   = rand_balance(1, 1000)
+
+    sms = (
+        f"{tid} Confirmed. Cash withdrawal of GHS{amt:.2f} at agent {agent} ({biz}) "
+        f"on {fdate(dt)} {ftime(dt)}. Your new Telecel Cash balance is GHS{bal:.2f}. "
+        f"You were charged GHS0.00."
     )
     return dict(raw_sms=sms, telco="telecel", tx_type="cash_withdrawal",
                 amount=amt, counterparty_name=biz, counterparty_phone=agent,
@@ -387,6 +421,26 @@ def tcash_bank_transfer():
                 balance=bal, fee=fee, tx_id=tid, reference=ref, dest_network="bank")
 
 
+def tcash_bank_transfer_v2():
+    tid          = tcash_txid()
+    name         = rname()
+    bank, acct   = random.choice(BANK_ACCOUNTS)
+    amt          = rand_amount(20, 2000)
+    dt           = rand_dt()
+    bal          = rand_balance(1, 1000)
+    fee          = tcash_fee(amt, "bank")
+    ref          = rref()
+
+    sms = (
+        f"{tid} Confirmed. GHS{amt:.2f} transferred to {name} ({bank} - {acct}) on "
+        f"{fdate(dt)} at {ftime(dt)}. Fee GHS{fee:.2f}. "
+        f"New Telecel Cash balance: GHS{bal:.2f}. Ref: {ref}"
+    )
+    return dict(raw_sms=sms, telco="telecel", tx_type="bank_transfer",
+                amount=amt, counterparty_name=name, counterparty_phone=acct,
+                balance=bal, fee=fee, tx_id=tid, reference=ref, dest_network="bank")
+
+
 def tcash_deposit_received():
     tid = tcash_txid()
     biz = random.choice(BUSINESS_NAMES)
@@ -405,6 +459,23 @@ def tcash_deposit_received():
                 balance=bal, fee=0.00, tx_id=tid, reference="", dest_network="telecel")
 
 
+def tcash_deposit_received_v2():
+    tid   = tcash_txid()
+    name  = rname()
+    phone = telecel_phone()
+    amt   = rand_amount(50, 2000)
+    dt    = rand_dt()
+    bal   = rand_balance(50, 3000)
+
+    sms = (
+        f"{tid} Confirmed. A deposit of GHS{amt:.2f} was received from {phone} - {name} "
+        f"on {fdate(dt)} at {ftime(dt)}. Your new Telecel Cash balance is GHS{bal:.2f}."
+    )
+    return dict(raw_sms=sms, telco="telecel", tx_type="deposit_received",
+                amount=amt, counterparty_name=name, counterparty_phone=phone,
+                balance=bal, fee=0.00, tx_id=tid, reference="", dest_network="telecel")
+
+
 def tcash_payment_received_expresspay():
     tid = tcash_txid()
     amt = rand_amount(50, 1000)
@@ -418,6 +489,22 @@ def tcash_payment_received_expresspay():
     return dict(raw_sms=sms, telco="telecel", tx_type="payment_received",
                 amount=amt, counterparty_name="EXPRESSPAY", counterparty_phone="735000",
                 balance=bal, fee=0.00, tx_id=tid, reference="", dest_network="telecel")
+
+
+def tcash_payment_received_expresspay_v2():
+    tid = tcash_txid()
+    amt = rand_amount(50, 1000)
+    dt  = rand_dt()
+    bal = rand_balance(50, 2000)
+    ref = inv_ref()
+
+    sms = (
+        f"{tid} Confirmed. Payment of GHS{amt:.2f} received from EXPRESSPAY - 735000 on "
+        f"{fdate(dt)} at {ftime(dt)}. Your Telecel Cash balance is GHS{bal:.2f}. Ref: {ref}"
+    )
+    return dict(raw_sms=sms, telco="telecel", tx_type="payment_received",
+                amount=amt, counterparty_name="EXPRESSPAY", counterparty_phone="735000",
+                balance=bal, fee=0.00, tx_id=tid, reference=ref, dest_network="telecel")
 
 
 def tcash_loan_repayment():
@@ -443,6 +530,22 @@ def tcash_loan_repayment():
                 balance=bal, fee=0.00, tx_id=tid, reference="", dest_network="telecel")
 
 
+def tcash_loan_repayment_v2():
+    tid = tcash_txid()
+    amt = rand_amount(1, 200)
+    dt  = rand_dt()
+    bal = rand_balance(1, 500)
+
+    sms = (
+        f"{tid} Confirmed. GHS{amt:.2f} debited for CBG Ready Loan repayment on "
+        f"{fdate(dt)} at {ftime(dt)}. New Telecel Cash balance: GHS{bal:.2f}. "
+        "Thank you for being a valued customer."
+    )
+    return dict(raw_sms=sms, telco="telecel", tx_type="loan_repayment",
+                amount=amt, counterparty_name="CBG READY LOAN", counterparty_phone="",
+                balance=bal, fee=0.00, tx_id=tid, reference="", dest_network="telecel")
+
+
 def tcash_interest_received():
     tid = tcash_txid()
     amt = round(random.uniform(0.10, 5.00), 2)
@@ -457,6 +560,21 @@ def tcash_interest_received():
                 balance=bal, fee=0.00, tx_id=tid, reference="", dest_network="telecel")
 
 
+def tcash_interest_received_v2():
+    tid = tcash_txid()
+    amt = round(random.uniform(0.10, 5.00), 2)
+    bal = rand_balance(50, 1000)
+    dt  = rand_dt()
+
+    sms = (
+        f"{tid} Confirmed. Interest of GHS{amt:.2f} credited to your Telecel Cash wallet on "
+        f"{fdate(dt)} at {ftime(dt)}. Your new balance is GHS{bal:.2f}."
+    )
+    return dict(raw_sms=sms, telco="telecel", tx_type="interest_received",
+                amount=amt, counterparty_name="TELECEL CASH", counterparty_phone="",
+                balance=bal, fee=0.00, tx_id=tid, reference="", dest_network="telecel")
+
+
 def tcash_wallet_balance():
     tid = tcash_txid()
     bal = rand_balance(0, 2000)
@@ -465,6 +583,20 @@ def tcash_wallet_balance():
         f"{tid} Confirmed. Your Telecel Cash wallet balance is GHS{bal:.2f} . "
         "Sending money from Telecel Cash to Telecel Cash remains FREE on the Telecel Play App. "
         "Download the App https://bit.ly/TelecelPlayGhana and continue to enjoy the convenience."
+    )
+    return dict(raw_sms=sms, telco="telecel", tx_type="wallet_balance",
+                amount=0.00, counterparty_name="", counterparty_phone="",
+                balance=bal, fee=0.00, tx_id=tid, reference="", dest_network="telecel")
+
+
+def tcash_wallet_balance_v2():
+    tid = tcash_txid()
+    bal = rand_balance(0, 2000)
+    dt  = rand_dt()
+
+    sms = (
+        f"{tid} Confirmed. Your Telecel Cash balance as of {fdate(dt)} {ftime(dt)} "
+        f"is GHS{bal:.2f}."
     )
     return dict(raw_sms=sms, telco="telecel", tx_type="wallet_balance",
                 amount=0.00, counterparty_name="", counterparty_phone="",
@@ -566,6 +698,25 @@ def mtn_cash_out():
                 balance=bal, fee=fee, tx_id=tid, reference="", dest_network="agent")
 
 
+def mtn_cash_out_v2():
+    biz   = random.choice(BUSINESS_NAMES)
+    phone = mtn_phone()
+    amt   = rand_amount(20, 1000)
+    bal   = rand_balance(1, 2000)
+    fee   = mtn_fee(amt, "cash_out")
+    tid   = mtn_txid()
+    bal_s = f"GHS {fmt_amt(bal)}"
+
+    sms = (
+        f"You have cashed out GHS {amt:.2f} at {biz} ({phone}). Available Balance: {bal_s}. "
+        f"Transaction ID: {tid}. Fee charged: GHS {fee:.2f}. "
+        f"Thank you for using MTN MobileMoney."
+    )
+    return dict(raw_sms=sms, telco="mtn", tx_type="cash_out",
+                amount=amt, counterparty_name=biz, counterparty_phone=phone,
+                balance=bal, fee=fee, tx_id=tid, reference="", dest_network="agent")
+
+
 def mtn_airtime_purchase():
     amt = rand_amount(1, 50)
     dt  = rand_dt()
@@ -595,6 +746,24 @@ def mtn_bundle_purchase():
         f"Payment for GHS{amt:.2f} to MTN BUNDLE .Current Balance: {bal_s}. "
         f"Transaction Id: {tid}. Fee charged: GHS0.00,Tax Charged 0 "
         "Download the MoMo App for a Faster & Easier Experience."
+    )
+    return dict(raw_sms=sms, telco="mtn", tx_type="bundle_purchase",
+                amount=amt, counterparty_name="MTN BUNDLE", counterparty_phone="400300",
+                balance=bal, fee=0.00, tx_id=tid, reference="", dest_network="mtn")
+
+
+def mtn_bundle_purchase_v2():
+    amt = random.choice([5.00, 10.00, 15.00, 20.00, 25.00, 30.00, 50.00])
+    bal = rand_balance(50, 2000)
+    tid = mtn_txid()
+    dt  = rand_dt()
+    bal_s = f"GHS {fmt_amt(bal)}"
+
+    sms = (
+        f"Your payment of GHS {amt:.2f} to MTN BUNDLE has been completed at "
+        f"{fdate(dt)} {ftime(dt)}. Your new balance: {bal_s}. "
+        f"Fee was GHS 0.00 Tax was GHS 0.00. "
+        f"Financial Transaction Id: {tid}."
     )
     return dict(raw_sms=sms, telco="mtn", tx_type="bundle_purchase",
                 amount=amt, counterparty_name="MTN BUNDLE", counterparty_phone="400300",
@@ -638,30 +807,40 @@ def mtn_merchant_payment():
 # ─── Weighted distribution ────────────────────────────────────────────────────
 
 TELECEL_DIST = [
-    (tcash_transfer_sent_mtn,           0.20),
-    (tcash_transfer_sent_telecel,       0.07),
-    (tcash_transfer_received_mtn,       0.18),
-    (tcash_transfer_received_telecel,   0.06),
-    (tcash_merchant_payment,            0.15),
-    (tcash_airtime_purchase,            0.08),
-    (tcash_airtime_received,            0.04),
-    (tcash_cash_withdrawal,             0.06),
-    (tcash_bank_transfer,               0.06),
-    (tcash_deposit_received,            0.04),
-    (tcash_payment_received_expresspay, 0.02),
-    (tcash_loan_repayment,              0.02),
-    (tcash_interest_received,           0.01),
-    (tcash_wallet_balance,              0.01),
+    (tcash_transfer_sent_mtn,              0.20),
+    (tcash_transfer_sent_telecel,          0.07),
+    (tcash_transfer_received_mtn,          0.18),
+    (tcash_transfer_received_telecel,      0.06),
+    (tcash_merchant_payment,               0.15),
+    (tcash_airtime_purchase,               0.08),
+    (tcash_airtime_received,               0.02),
+    (tcash_airtime_received_v2,            0.02),
+    (tcash_cash_withdrawal,                0.03),
+    (tcash_cash_withdrawal_v2,             0.03),
+    (tcash_bank_transfer,                  0.03),
+    (tcash_bank_transfer_v2,               0.03),
+    (tcash_deposit_received,               0.02),
+    (tcash_deposit_received_v2,            0.02),
+    (tcash_payment_received_expresspay,    0.01),
+    (tcash_payment_received_expresspay_v2, 0.01),
+    (tcash_loan_repayment,                 0.01),
+    (tcash_loan_repayment_v2,              0.01),
+    (tcash_interest_received,              0.005),
+    (tcash_interest_received_v2,           0.005),
+    (tcash_wallet_balance,                 0.005),
+    (tcash_wallet_balance_v2,              0.005),
 ]
 
 MTN_DIST = [
-    (mtn_payment_made_v1,   0.20),
-    (mtn_payment_made_v2,   0.18),
-    (mtn_payment_received,  0.28),
-    (mtn_cash_out,          0.11),
-    (mtn_airtime_purchase,  0.09),
-    (mtn_bundle_purchase,   0.05),
-    (mtn_merchant_payment,  0.09),
+    (mtn_payment_made_v1,    0.20),
+    (mtn_payment_made_v2,    0.18),
+    (mtn_payment_received,   0.28),
+    (mtn_cash_out,           0.055),
+    (mtn_cash_out_v2,        0.055),
+    (mtn_airtime_purchase,   0.09),
+    (mtn_bundle_purchase,    0.025),
+    (mtn_bundle_purchase_v2, 0.025),
+    (mtn_merchant_payment,   0.09),
 ]
 
 
@@ -672,9 +851,11 @@ def wchoice(dist):
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
-def generate(n_telecel: int = 155, n_mtn: int = 160) -> list[dict]:
-    rows = [wchoice(TELECEL_DIST)() for _ in range(n_telecel)]
-    rows += [wchoice(MTN_DIST)() for _ in range(n_mtn)]
+def generate(per_type: int = 200) -> list[dict]:
+    """Generate `per_type` samples of every transaction type (balanced)."""
+    rows = []
+    for func, _ in TELECEL_DIST + MTN_DIST:
+        rows += [func() for _ in range(per_type)]
     random.shuffle(rows)
     return rows
 

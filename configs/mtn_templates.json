@@ -170,6 +170,42 @@
         "time": null
       },
       "notes": "Agent name may have trailing space before period (APPLE CARE PLUS .) or not (KEYSBIGGLES ENTERPRISE.). Fee is always 0 — cash-in is free on MTN MoMo."
+    },
+    {
+      "id": "mtn_cash_out_v2",
+      "tx_type": "cash_out",
+      "description": "Cash out — 'You have cashed out GHS... at BUSINESS (PHONE)' variant, no 'Cash Out made for' opener",
+      "example": "You have cashed out GHS 186.69 at APOA CONSTRUCTION (0544319278). Available Balance: GHS 813.02. Transaction ID: 78639541234. Fee charged: GHS 1.50. Thank you for using MTN MobileMoney.",
+      "pattern": "^You have cashed out GHS\\s*(?P<amount>[\\d,]+\\.?\\d*) at (?P<counterparty_name>.+?) \\((?P<counterparty_phone>[\\d]+)\\)\\. Available Balance: GHS\\s*(?P<balance>[\\d,]+\\.?\\d*)\\. Transaction ID:\\s*(?P<tx_id>\\d+)\\. Fee charged:\\s*GHS\\s*(?P<fee>[\\d.]+)",
+      "fields": {
+        "amount": "group:amount",
+        "counterparty_name": "group:counterparty_name",
+        "counterparty_phone": "group:counterparty_phone",
+        "balance": "group:balance",
+        "tx_id": "group:tx_id",
+        "fee": "group:fee",
+        "reference": null,
+        "date": null,
+        "time": null
+      }
+    },
+    {
+      "id": "mtn_bundle_purchase_v2",
+      "tx_type": "bill_payment",
+      "description": "MTN data bundle purchase — 'Your payment of GHS X to MTN BUNDLE has been completed' variant. Typed bill_payment to match mtn_service_payment convention.",
+      "example": "Your payment of GHS 20.00 to MTN BUNDLE has been completed at 2025-08-19 19:40:12. Your new balance: GHS 1,895.88. Fee was GHS 0.00 Tax was GHS 0.00. Financial Transaction Id: 76990123456.",
+      "pattern": "^Your payment of GHS (?P<amount>[\\d,]+\\.?\\d*) to MTN BUNDLE has been completed at (?P<date>\\d{4}-\\d{2}-\\d{2}) (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your new balance: GHS (?P<balance>[\\d,]+\\.?\\d*)\\. Fee was GHS (?P<fee>[\\d.]+).*?Financial Transaction Id:\\s*(?P<tx_id>\\d+)",
+      "fields": {
+        "amount": "group:amount",
+        "date": "group:date",
+        "time": "group:time",
+        "balance": "group:balance",
+        "fee": "group:fee",
+        "tx_id": "group:tx_id",
+        "counterparty_name": "literal:MTN BUNDLE",
+        "counterparty_phone": "literal:400300",
+        "reference": null
+      }
     }
   ]
 }

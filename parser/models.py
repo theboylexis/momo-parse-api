@@ -8,10 +8,11 @@ class ParseResult:
     telco: str                        # mtn | telecel | unknown
     tx_type: str                      # transfer_sent | transfer_received | etc.
     template_id: Optional[str]
-    confidence: float                 # 1.0 = perfect match, 0.8 = partial, 0.0 = unrecognized
+    confidence: float                 # continuous [0, 1]: weighted ratio of critical fields captured
 
     # Financial fields
     amount: Optional[float]
+    match_mode: str = "exact"         # exact | fuzzy | none
     currency: str = "GHS"
     balance: Optional[float] = None
     fee: float = 0.0
@@ -32,6 +33,7 @@ class ParseResult:
             "tx_type": self.tx_type,
             "template_id": self.template_id,
             "confidence": self.confidence,
+            "match_mode": self.match_mode,
             "amount": self.amount,
             "currency": self.currency,
             "balance": self.balance,

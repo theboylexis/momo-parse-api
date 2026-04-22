@@ -32,7 +32,6 @@ class MoMoParser:
         Returns:
             ParseResult with all extracted fields and a confidence score.
         """
-        # ── Stage 1: Telco Detection ─────────────────────────────────────────
         telco, telco_conf = self.detector.detect(sms_text, sender_id)
 
         if telco == "unknown":
@@ -42,28 +41,26 @@ class MoMoParser:
                 tx_type="unknown",
                 template_id=None,
                 confidence=0.0,
+                match_mode="none",
                 amount=None,
             )
 
-        # ── Stage 2: Template Matching ───────────────────────────────────────
-        template, match_obj, match_conf = self.matcher.match(telco, sms_text)
+        template, groups, match_conf, match_mode = self.matcher.match(telco, sms_text)
 
-        if template is None or match_obj is None:
-            # Telco identified but no template matched
+        if template is None:
             return ParseResult(
                 raw_sms=sms_text,
                 telco=telco,
                 tx_type="unknown",
                 template_id=None,
                 confidence=round(0.5 * telco_conf, 2),
+                match_mode="none",
                 amount=None,
             )
 
-        # ── Stage 3: Field Extraction ────────────────────────────────────────
-        fields = self.extractor.extract(template, match_obj)
+        fields = self.extractor.extract(template, groups)
 
-        # Final confidence: minimum of telco and template match scores
-        # (a chain is only as strong as its weakest link)
+        # Chain is only as strong as its weakest link.
         confidence = round(min(telco_conf, match_conf), 2)
 
         return ParseResult(
@@ -72,6 +69,7 @@ class MoMoParser:
             tx_type=template["tx_type"],
             template_id=template["id"],
             confidence=confidence,
+            match_mode=match_mode,
             amount=fields.get("amount"),
             balance=fields.get("balance"),
             fee=fields.get("fee") or 0.0,

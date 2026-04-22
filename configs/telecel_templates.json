@@ -262,6 +262,150 @@
         "time": null
       },
       "notes": "No amount or counterparty — parser should not attempt field extraction beyond balance"
+    },
+    {
+      "id": "telecel_airtime_received_v2",
+      "tx_type": "airtime_received",
+      "description": "Airtime received — simplified 'Airtime of GHS...' wording, no 'Transaction ID:' prefix",
+      "example": "0000014091720586 Confirmed. Airtime of GHS56.00 received from 0505864434 - ASAMOAH EFFAH on 2025-08-04 at 08:25:19. Thank you for using Telecel Cash.",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. Airtime of GHS(?P<amount>[\\d.]+) received from (?P<counterparty_phone>[\\d]+) - (?P<counterparty_name>[A-Za-z][A-Za-z\\s'.\\-&]+?) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Thank you for using Telecel Cash",
+      "fields": {
+        "tx_id": "group:tx_id",
+        "amount": "group:amount",
+        "counterparty_phone": "group:counterparty_phone",
+        "counterparty_name": "group:counterparty_name",
+        "date": "group:date",
+        "time": "group:time",
+        "balance": null,
+        "fee": "literal:0.00",
+        "reference": null
+      }
+    },
+    {
+      "id": "telecel_cash_withdrawal_v2",
+      "tx_type": "cash_withdrawal",
+      "description": "Agent withdrawal — 'Cash withdrawal of GHS... at agent CODE (BUSINESS)' form",
+      "example": "0000013632744514 Confirmed. Cash withdrawal of GHS217.36 at agent A44678 (TEN ELEVEN MART) on 2025-08-30 06:25:37. Your new Telecel Cash balance is GHS812.00. You were charged GHS0.00.",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. Cash withdrawal of GHS(?P<amount>[\\d.]+) at agent (?P<agent_code>[A-Z0-9]+) \\((?P<counterparty_name>[^)]+)\\) on (?P<date>\\d{4}-\\d{2}-\\d{2}) (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your new Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\. You were charged GHS(?P<fee>[\\d.]+)",
+      "fields": {
+        "tx_id": "group:tx_id",
+        "amount": "group:amount",
+        "counterparty_phone": "group:agent_code",
+        "counterparty_name": "group:counterparty_name",
+        "date": "group:date",
+        "time": "group:time",
+        "balance": "group:balance",
+        "fee": "group:fee",
+        "reference": null
+      }
+    },
+    {
+      "id": "telecel_bank_transfer_v2",
+      "tx_type": "bank_transfer",
+      "description": "Bank transfer — 'GHSX transferred to NAME (BANK - ACCT)' form with inline fee and 'New Telecel Cash balance:' label",
+      "example": "0000017141657970 Confirmed. GHS1957.00 transferred to PETER BAAH GYIMAH (ABSA ACCOUNT - 9050045678123) on 2025-12-25 at 09:20:41. Fee GHS8.57. New Telecel Cash balance: GHS921.45. Ref: indomie",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. GHS(?P<amount>[\\d.]+) transferred to (?P<counterparty_name>[A-Za-z][A-Za-z\\s'.\\-&]+?) \\((?P<bank_name>[^-]+?) - (?P<account_no>\\d+)\\) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Fee GHS(?P<fee>[\\d.]+)\\. New Telecel Cash balance: GHS(?P<balance>[\\d.]+)\\. Ref:\\s*(?P<reference>.+)",
+      "fields": {
+        "tx_id": "group:tx_id",
+        "amount": "group:amount",
+        "counterparty_phone": "group:account_no",
+        "counterparty_name": "group:counterparty_name",
+        "date": "group:date",
+        "time": "group:time",
+        "balance": "group:balance",
+        "fee": "group:fee",
+        "reference": "group:reference"
+      }
+    },
+    {
+      "id": "telecel_deposit_received_v2",
+      "tx_type": "deposit_received",
+      "description": "Deposit received — 'A deposit of GHS... was received from PHONE - NAME' variant (peer-to-peer cash-in)",
+      "example": "0000014746327887 Confirmed. A deposit of GHS112.73 was received from 0507076617 - ADJOA ABDUL-MUMIN on 2025-12-02 at 00:21:45. Your new Telecel Cash balance is GHS456.78.",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. A deposit of GHS(?P<amount>[\\d.]+) was received from (?P<counterparty_phone>[\\d]+) - (?P<counterparty_name>[A-Za-z][A-Za-z\\s'.\\-&]+?) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your new Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\.",
+      "fields": {
+        "tx_id": "group:tx_id",
+        "amount": "group:amount",
+        "counterparty_phone": "group:counterparty_phone",
+        "counterparty_name": "group:counterparty_name",
+        "date": "group:date",
+        "time": "group:time",
+        "balance": "group:balance",
+        "fee": "literal:0.00",
+        "reference": null
+      }
+    },
+    {
+      "id": "telecel_payment_received_v2",
+      "tx_type": "payment_received",
+      "description": "Inbound payment from processor — 'Payment of GHS... received from NAME - SHORTCODE' with 'Ref:' trailer",
+      "example": "0000011704510927 Confirmed. Payment of GHS423.18 received from EXPRESSPAY - 735000 on 2025-08-30 at 14:50:27. Your Telecel Cash balance is GHS812.00. Ref: INV-1234",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. Payment of GHS(?P<amount>[\\d.]+) received from (?P<counterparty_name>[A-Za-z][A-Za-z0-9\\s'.\\-&]+?) - (?P<counterparty_phone>\\d+) on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your Telecel Cash balance is GHS(?P<balance>[\\d.]+)\\. Ref:\\s*(?P<reference>.+)",
+      "fields": {
+        "tx_id": "group:tx_id",
+        "amount": "group:amount",
+        "counterparty_name": "group:counterparty_name",
+        "counterparty_phone": "group:counterparty_phone",
+        "date": "group:date",
+        "time": "group:time",
+        "balance": "group:balance",
+        "fee": "literal:0.00",
+        "reference": "group:reference"
+      }
+    },
+    {
+      "id": "telecel_loan_repayment_v2",
+      "tx_type": "loan_repayment",
+      "description": "Ready Loan repayment — 'GHSX debited for CBG Ready Loan repayment' variant",
+      "example": "0000012841311402 Confirmed. GHS45.00 debited for CBG Ready Loan repayment on 2025-09-20 at 14:30:00. New Telecel Cash balance: GHS123.45. Thank you for being a valued customer.",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. GHS(?P<amount>[\\d.]+) debited for CBG Ready Loan repayment on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. New Telecel Cash balance: GHS(?P<balance>[\\d.]+)\\.",
+      "fields": {
+        "tx_id": "group:tx_id",
+        "amount": "group:amount",
+        "counterparty_name": "literal:CBG READY LOAN",
+        "date": "group:date",
+        "time": "group:time",
+        "balance": "group:balance",
+        "fee": "literal:0.00",
+        "counterparty_phone": null,
+        "reference": null
+      }
+    },
+    {
+      "id": "telecel_interest_received_v2",
+      "tx_type": "interest_received",
+      "description": "Interest credited — 'Interest of GHSX credited to your Telecel Cash wallet' variant (has tx_id, unlike v1)",
+      "example": "0000017757623385 Confirmed. Interest of GHS2.27 credited to your Telecel Cash wallet on 2025-11-24 at 07:22:13. Your new balance is GHS500.00.",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. Interest of GHS(?P<amount>[\\d.]+) credited to your Telecel Cash wallet on (?P<date>\\d{4}-\\d{2}-\\d{2}) at (?P<time>\\d{2}:\\d{2}:\\d{2})\\. Your new balance is GHS(?P<balance>[\\d.]+)\\.",
+      "fields": {
+        "tx_id": "group:tx_id",
+        "amount": "group:amount",
+        "counterparty_name": "literal:TELECEL CASH",
+        "date": "group:date",
+        "time": "group:time",
+        "balance": "group:balance",
+        "fee": "literal:0.00",
+        "counterparty_phone": null,
+        "reference": null
+      }
+    },
+    {
+      "id": "telecel_wallet_balance_v2",
+      "tx_type": "wallet_balance",
+      "description": "Balance check — 'Your Telecel Cash balance as of DATE TIME is GHSX' variant",
+      "example": "0000013161496147 Confirmed. Your Telecel Cash balance as of 2025-09-13 08:14:22 is GHS1867.76.",
+      "pattern": "^(?P<tx_id>\\d{16}) Confirmed\\. Your Telecel Cash balance as of (?P<date>\\d{4}-\\d{2}-\\d{2}) (?P<time>\\d{2}:\\d{2}:\\d{2}) is GHS(?P<balance>[\\d.]+)\\.",
+      "fields": {
+        "tx_id": "group:tx_id",
+        "balance": "group:balance",
+        "date": "group:date",
+        "time": "group:time",
+        "amount": "literal:0.00",
+        "fee": "literal:0.00",
+        "counterparty_name": null,
+        "counterparty_phone": null,
+        "reference": null
+      }
     }
   ]
 }
