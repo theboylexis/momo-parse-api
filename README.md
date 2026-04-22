@@ -26,7 +26,7 @@ print(result.tx_type)     # "cash_withdrawal"
 print(result.amount)      # 299.58
 print(result.balance)     # 654.03
 print(result.date)        # "2025-09-10"
-print(result.confidence)  # 0.97
+print(result.confidence)  # 0.9
 ```
 
 ---
@@ -42,7 +42,7 @@ MomoParse inverts this: it extracts **6 of 8 telco credit scoring signals** from
 ```
 Raw SMS
   ↓
-Parser ─────────── 23 regex templates (9 MTN, 14 Telecel)
+Parser ─────────── 33 regex templates (11 MTN, 22 Telecel) + fuzzy fallback
   ↓
 ML Categorizer ─── RandomForest, 406 labeled samples, 15 categories
   ↓
@@ -96,7 +96,9 @@ Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted ind
 
 ## Validation
 
-- **543 tests** passing
+- **6,400+ tests** passing — 6,200 synthetic corpus rows + 91 real-SMS corpus + 150 unit/integration tests
+- **Validated against systematic template-drift mutations** — a 131-case harness applies realistic telco drift (verb swaps, currency-symbol drift, field reorder, whitespace bloat, SMS truncation, label abbreviation, promo injection) across every registered template and asserts `amount`, `tx_type`, and `balance` still recover
+- **Fuzzy fallback** — when no regex matches exactly, a token-overlap + generic field regex path recovers partial data with a capped confidence (≤0.6), so the Financial Health Index never silently loses a transaction to format drift
 - **100 real Telecel transactions** validated against official statement
 - **80+ real MTN transactions** validated against real SMS
 - **27 statement transaction types** mapped to parser templates
@@ -132,7 +134,7 @@ result = p.parse(sms_text)
 result = p.parse(sms_text, sender_id="MobileMoney")
 
 # Access fields
-result.telco          # "mtn" | "telecel" | "airteigo" | "unknown"
+result.telco          # "mtn" | "telecel" | "unknown"
 result.tx_type        # "transfer_sent" | "cash_withdrawal" | ...
 result.amount         # float or None
 result.balance        # float or None
@@ -143,7 +145,8 @@ result.tx_id          # str or None
 result.reference      # str or None
 result.date           # "YYYY-MM-DD" or None
 result.time           # "HH:MM:SS" or None
-result.confidence     # float in [0, 1]
+result.confidence     # float in [0, 1] — continuous weighted-field score
+result.match_mode     # "exact" | "fuzzy" | "none" — which path produced the result
 
 # Dict output
 result.to_dict()
