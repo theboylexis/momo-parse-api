@@ -229,6 +229,10 @@ class ReportResponse(BaseModel):
     financial_indexes: Optional[FinancialIndexes] = Field(
         None, description="Formalized financial indexes grounded in established methodology."
     )
+    data_confidence: Optional[str] = Field(
+        None,
+        description="How much to trust the scores given data volume: 'high' (3+ months, 20+ tx), 'medium' (2+ months or 5+ tx), 'low' otherwise.",
+    )
     summary: Optional[EnrichSummary] = None
 
 

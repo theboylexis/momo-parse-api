@@ -104,5 +104,6 @@ async def report(
         recommendations=[Recommendation(**r) for r in data["recommendations"]],
         financial_health_score=data["financial_health_score"],
         financial_indexes=FinancialIndexes(**data["financial_indexes"]),
+        data_confidence=data["data_confidence"],
         summary=_build_enrich_summary(data["summary"]),
     )
