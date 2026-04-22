@@ -386,6 +386,18 @@ _HTML = """\
     background: #E6F5F0;
     color: #0D9373;
   }
+  .mode-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .mode-exact { background: #E6F5F0; color: #0D9373; }
+  .mode-fuzzy { background: #FEF3C7; color: #92400E; }
+  .mode-none  { background: #FEE2E2; color: #991B1B; }
 
   /* ── Report ────────────────────────────── */
   .report { display: none; }
@@ -756,8 +768,8 @@ _HTML = """\
       transparent credit intelligence from data they already own.
     </p>
     <div class="stats-row">
-      <div class="stat"><span class="stat-num">23</span><span class="stat-label">SMS templates</span></div>
-      <div class="stat"><span class="stat-num">543+</span><span class="stat-label">tests passing</span></div>
+      <div class="stat"><span class="stat-num">33</span><span class="stat-label">SMS templates + fuzzy fallback</span></div>
+      <div class="stat"><span class="stat-num">6,400+</span><span class="stat-label">tests passing</span></div>
       <div class="stat"><span class="stat-num">~95%</span><span class="stat-label">MoMo volume covered</span></div>
       <div class="stat"><span class="stat-num">5</span><span class="stat-label">financial indexes</span></div>
     </div>
@@ -769,7 +781,7 @@ _HTML = """\
       <div class="pipe-step">
         <div class="pipe-num">01</div>
         <div class="pipe-name">Parse</div>
-        <div class="pipe-desc">Detect telco, match against 23 regex templates, extract amount, balance, fee, counterparty, date</div>
+        <div class="pipe-desc">Detect telco, match against 33 regex templates (with fuzzy fallback for drifted wording), extract amount, balance, fee, counterparty, date</div>
       </div>
       <div class="pipe-arrow">&rarr;</div>
       <div class="pipe-step">
@@ -960,6 +972,7 @@ async function parseSingle() {
       { l: 'Counterparty', v: (data.counterparty && data.counterparty.name) || '—' },
       { l: 'Category', v: data.category_label || data.category || '—' },
       { l: 'Confidence', v: '<span class="conf-badge">' + ((data.confidence || 0) * 100).toFixed(0) + '%</span>' },
+      { l: 'Match mode', v: '<span class="mode-badge mode-' + (data.match_mode || 'none') + '">' + (data.match_mode || 'none') + '</span>' },
     ];
     document.getElementById('parse-fields').innerHTML = fields.map(f =>
       '<div class="parse-field">' +

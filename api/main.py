@@ -124,7 +124,7 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     duration_ms = round((time.monotonic() - t0) * 1000, 2)
     logger.info(
-        "%s %s → %s (%.1fms)",
+        "%s %s -> %s (%.1fms)",
         request.method,
         request.url.path,
         response.status_code,
