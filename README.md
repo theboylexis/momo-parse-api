@@ -4,9 +4,7 @@
 
 Parse raw Mobile Money SMS messages from MTN and Telecel into structured financial data, categorize transactions with ML, and compute financial health indexes — all from user-owned SMS confirmations.
 
-**Try it live:** [momo-parse.up.railway.app/demo](https://momo-parse.up.railway.app/demo) · **API docs:** [/docs](https://momo-parse.up.railway.app/docs)
-
-**Author:** Alex Marfo ([@theboylexis](https://github.com/theboylexis)) — sole creator, designer, and maintainer. Portfolio: [alexmarfo.vercel.app](https://alexmarfo.vercel.app) · [Building MomoParse (blog)](https://alexmarfo.vercel.app/blog/building-momo-parse-api)
+[**Live demo**](https://momo-parse.up.railway.app/demo) — [**API docs**](https://momo-parse.up.railway.app/docs)
 
 ### Who this serves
 
@@ -182,3 +180,7 @@ Issues and PRs welcome. Parser templates live in `parser/configs/` — adding a 
 ## License
 
 MIT — Copyright © 2025–2026 Alex Marfo. See [LICENSE](LICENSE).
+
+---
+
+Built by Alex Marfo ([@theboylexis](https://github.com/theboylexis)) — sole creator and maintainer. [Portfolio](https://alexmarfo.vercel.app) · [Build notes](https://alexmarfo.vercel.app/blog/building-momo-parse-api).
