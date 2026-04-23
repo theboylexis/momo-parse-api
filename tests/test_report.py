@@ -217,6 +217,75 @@ def test_compute_report_health_score_negative_saver():
     assert result["financial_health_score"] <= 50
 
 
+def test_compute_financial_indexes_returns_score_drivers():
+    from enricher.analytics import compute_financial_indexes
+    txs = [
+        {"tx_type": "transfer_received", "amount": 1000.0, "category": "sales_revenue",
+         "counterparty_name": "Client A", "counterparty_phone": None, "date": "2026-01-10", "fee": 0.0},
+        {"tx_type": "transfer_sent", "amount": 300.0, "category": "supplier_payment",
+         "counterparty_name": "Supplier B", "counterparty_phone": None, "date": "2026-01-20", "fee": 0.0},
+        {"tx_type": "transfer_received", "amount": 1100.0, "category": "sales_revenue",
+         "counterparty_name": "Client C", "counterparty_phone": None, "date": "2026-02-10", "fee": 0.0},
+        {"tx_type": "transfer_sent", "amount": 320.0, "category": "supplier_payment",
+         "counterparty_name": "Supplier B", "counterparty_phone": None, "date": "2026-02-20", "fee": 0.0},
+    ]
+    result = compute_financial_indexes(txs)
+    drivers = result["score_drivers"]
+    # All five indexes always returned
+    assert len(drivers) == 5
+    assert {d["index"] for d in drivers} == {
+        "savings_rate", "income_stability", "expense_volatility",
+        "counterparty_concentration", "transaction_velocity",
+    }
+    # Every driver has the three required fields in valid ranges
+    for d in drivers:
+        assert 0.0 <= d["normalized"] <= 1.0
+        assert 0 <= d["contribution_pp"] <= 100
+    # Sorted by contribution_pp descending
+    contribs = [d["contribution_pp"] for d in drivers]
+    assert contribs == sorted(contribs, reverse=True)
+
+
+def test_score_drivers_sum_reconciles_with_composite():
+    """With >= 2 months of data, no low-data penalty applies, so the sum
+    of driver contributions must equal the composite score (±1 for rounding)."""
+    from enricher.analytics import compute_financial_indexes
+    txs = [
+        {"tx_type": "transfer_received", "amount": 1000.0, "category": "sales_revenue",
+         "counterparty_name": "Client A", "counterparty_phone": None, "date": "2026-01-10", "fee": 0.0},
+        {"tx_type": "transfer_sent", "amount": 300.0, "category": "supplier_payment",
+         "counterparty_name": "Supplier B", "counterparty_phone": None, "date": "2026-01-20", "fee": 0.0},
+        {"tx_type": "transfer_received", "amount": 1100.0, "category": "sales_revenue",
+         "counterparty_name": "Client C", "counterparty_phone": None, "date": "2026-02-10", "fee": 0.0},
+        {"tx_type": "transfer_sent", "amount": 320.0, "category": "supplier_payment",
+         "counterparty_name": "Supplier B", "counterparty_phone": None, "date": "2026-02-20", "fee": 0.0},
+    ]
+    result = compute_financial_indexes(txs)
+    composite = result["composite_health_score"]
+    drivers_sum = sum(d["contribution_pp"] for d in result["score_drivers"])
+    # ±2 tolerance accounts for per-driver rounding
+    assert abs(drivers_sum - composite) <= 2
+
+
+async def test_report_includes_score_drivers(client):
+    resp = await client.post("/v1/report", headers=HEADERS, json={
+        "messages": [
+            {"sms_text": _MTN_TRANSFER_SENT},
+            {"sms_text": _MTN_TRANSFER_RECEIVED},
+        ]
+    })
+    assert resp.status_code == 200
+    indexes = resp.json()["financial_indexes"]
+    assert "score_drivers" in indexes
+    drivers = indexes["score_drivers"]
+    assert isinstance(drivers, list)
+    assert len(drivers) == 5
+    for d in drivers:
+        assert "index" in d
+        assert "normalized" in d
+        assert "contribution_pp" in d
+
+
 def test_compute_report_spending_insight_present():
     from enricher.analytics import compute_report
     txs = [

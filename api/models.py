@@ -146,6 +146,14 @@ class RiskSignal(BaseModel):
     severity: str  # "low" | "medium" | "high"
 
 
+class ScoreDriver(BaseModel):
+    index: str = Field(description="Sub-index identifier (e.g. 'savings_rate').")
+    normalized: float = Field(description="Normalized sub-score in [0, 1].")
+    contribution_pp: int = Field(
+        description="Points contributed to the 0–100 composite. Sum across drivers equals composite_health_score when no low-data penalty applies."
+    )
+
+
 class FinancialIndexes(BaseModel):
     savings_rate: float = Field(description="(Income - Expenses) / Income × 100. Standard personal finance metric.")
     transaction_velocity: float = Field(description="Transactions per day. Proxy for economic activity.")
@@ -159,6 +167,10 @@ class FinancialIndexes(BaseModel):
         description="Normalized std deviation of monthly spending. Lower = more predictable."
     )
     composite_health_score: int = Field(description="Weighted composite of all indexes, 0–100.")
+    score_drivers: list[ScoreDriver] = Field(
+        default_factory=list,
+        description="Per-index decomposition of the composite score. Sorted by contribution descending.",
+    )
     data_points: Optional[dict] = Field(None, description="Months, transactions, and counterparties used.")
 
 

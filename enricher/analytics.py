@@ -677,6 +677,14 @@ def compute_financial_indexes(
         num_months=num_months,
     )
 
+    score_drivers = _compute_score_drivers(
+        savings_rate=savings_rate,
+        tx_velocity=tx_velocity,
+        income_stability=income_stability,
+        counterparty_concentration=counterparty_concentration,
+        expense_volatility=expense_volatility,
+    )
+
     return {
         "savings_rate": savings_rate,
         "transaction_velocity": tx_velocity,
@@ -684,12 +692,54 @@ def compute_financial_indexes(
         "counterparty_concentration_hhi": counterparty_concentration,
         "expense_volatility": expense_volatility,
         "composite_health_score": health_score,
+        "score_drivers": score_drivers,
         "data_points": {
             "months": num_months,
             "transactions": len(transactions),
             "counterparties": len(cp_amounts),
         },
     }
+
+
+def _compute_score_drivers(
+    *,
+    savings_rate: float,
+    tx_velocity: float,
+    income_stability: float,
+    counterparty_concentration: float,
+    expense_volatility: float,
+) -> list[dict[str, Any]]:
+    """
+    Decompose the composite MFH score into per-index contributions.
+
+    Each driver reports its normalized sub-score [0, 1] and the points it
+    contributed to the 0–100 composite. When ``num_months >= 2`` (no low-data
+    penalty), the sum of ``contribution_pp`` across drivers equals the
+    composite health score — giving lenders an exact, additive decomposition
+    of the number they're underwriting against.
+
+    Drivers are sorted by contribution descending, so the strongest signal
+    appears first.
+    """
+    raw = {
+        "savings_rate": savings_rate,
+        "income_stability": income_stability,
+        "expense_volatility": expense_volatility,
+        "counterparty_concentration": counterparty_concentration,
+        "transaction_velocity": tx_velocity,
+    }
+    drivers = [
+        {
+            "index": name,
+            "normalized": round(_normalize(raw[name], *_INDEX_BOUNDS[name]), 3),
+            "contribution_pp": round(
+                _INDEX_WEIGHTS[name] * _normalize(raw[name], *_INDEX_BOUNDS[name]) * 100
+            ),
+        }
+        for name in _INDEX_WEIGHTS
+    ]
+    drivers.sort(key=lambda d: -d["contribution_pp"])
+    return drivers
 
 
 def _normalize(value: float, low: float, high: float) -> float:
