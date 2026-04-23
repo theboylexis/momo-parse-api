@@ -54,6 +54,7 @@ desktop.ini
 
 # Project-specific
 corpus/real_sms_corpus.csv
+labeling/
 momoparse.db
 smoke_test.py
 BLOG_POST.md
