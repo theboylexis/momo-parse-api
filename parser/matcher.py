@@ -65,7 +65,18 @@ class TemplateMatcher:
         if best_template is not None:
             return best_template, best_groups, best_conf, "exact"
 
-        f_template, f_groups, similarity = fuzzy_match(sms_text, templates)
+        # Fuzzy matching is Jaccard-based on raw tokens — which means a
+        # "Your payment of X to Y has been completed" SMS for a generic
+        # merchant can rank an airtime template above a merchant template
+        # because the boilerplate tokens dominate. To keep fuzzy picks
+        # semantically honest, require that tx_types with a distinctive
+        # keyword signal only match when that keyword is actually in the
+        # SMS (airtime, bundle, withdrawal, deposit, etc.).
+        fuzzy_candidates = [
+            t for t in templates
+            if self._tx_type_signal_present(t.get("tx_type", ""), sms_text)
+        ]
+        f_template, f_groups, similarity = fuzzy_match(sms_text, fuzzy_candidates)
         if f_template is None:
             return None, {}, 0.0, "none"
 
@@ -115,8 +126,12 @@ class TemplateMatcher:
         """
         Weighted ratio of critical fields the template resolves for this tx_type.
         A field counts as captured if the template rule is a literal (always
-        resolves) or a named group that is present in `groups`. Returns 1.0 when
-        all critical fields are resolvable, 0.0 when none are.
+        resolves) or a named group that is present in ``groups``. Templates
+        explicitly set a field to ``null`` to declare it structurally absent
+        (e.g. MTN's money-transfer-deposit SMS carries no balance) — such
+        fields drop out of the score's denominator rather than counting as a
+        miss. Returns 1.0 when all applicable critical fields resolve, 0.0
+        when none do.
         """
         tx_type = template.get("tx_type", "")
         weights = _CRITICAL_FIELDS.get(tx_type, {})
@@ -124,9 +139,14 @@ class TemplateMatcher:
             return 1.0
 
         field_rules = template.get("fields", {})
-        total = sum(weights.values())
+        applicable = {f: w for f, w in weights.items() if field_rules.get(f) is not None}
+        if not applicable:
+            return 1.0
+
+        total = sum(applicable.values())
         captured = sum(
-            w for f, w in weights.items() if self._field_resolves(field_rules.get(f), groups)
+            w for f, w in applicable.items()
+            if self._field_resolves(field_rules[f], groups)
         )
         return captured / total if total else 1.0
 
@@ -152,3 +172,32 @@ class TemplateMatcher:
         if isinstance(rule, str) and rule.startswith("group:"):
             return groups.get(rule[6:]) is not None
         return False
+
+    # Keyword signals required in the SMS for tx_types that would
+    # otherwise cross-contaminate via fuzzy token overlap. An "airtime"
+    # template picked by Jaccard similarity for a generic merchant-payment
+    # SMS is how airtime totals ended up inflated by ~GHS 880k in the
+    # real-data demo. Only *product nouns* are gated here — not verbs —
+    # because the drift benchmark mutates verbs (``withdrawn → removed``)
+    # and requires fuzzy matching to survive those swaps. Product nouns
+    # (airtime, bundle, loan, interest) are stable brand/product terms
+    # telcos do not routinely rewrite, so requiring them does not defeat
+    # drift tolerance.
+    _TX_TYPE_SIGNALS: dict[str, tuple[str, ...]] = {
+        "airtime_purchase":  ("airtime",),
+        "airtime_received":  ("airtime",),
+        "bundle_purchase":   ("bundle",),
+        "loan_repayment":    ("loan",),
+        "loan_disbursement": ("loan",),
+        "interest_received": ("interest",),
+    }
+
+    @classmethod
+    def _tx_type_signal_present(cls, tx_type: str, sms_text: str) -> bool:
+        """True if the SMS contains at least one signal word for this tx_type.
+        Returns True for tx_types without a required signal (the default)."""
+        signals = cls._TX_TYPE_SIGNALS.get(tx_type)
+        if not signals:
+            return True
+        lower = sms_text.lower()
+        return any(s in lower for s in signals)

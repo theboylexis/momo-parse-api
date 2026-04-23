@@ -5,12 +5,53 @@ MoMo Parser — 3-stage pipeline orchestrator.
   Stage 2 (TemplateMatcher) → which template best describes it?
   Stage 3 (FieldExtractor)  → extract structured fields from the match.
 """
+import re
 from typing import Optional
 
 from .models import ParseResult
 from .detector import TelcoDetector
 from .matcher import TemplateMatcher
 from .extractor import FieldExtractor
+
+
+# Two classes of SMS that look transaction-shaped (contain amounts, tx ids,
+# counterparty-like phrases) but should not be counted. Both return
+# match_mode=none so downstream aggregation doesn't inflate totals.
+#
+# FAILURES — the transaction did NOT execute (daily-limit, insufficient
+#   funds, voucher expired, "has failed at..."). Counting them inflates
+#   category totals.
+# NOTIFICATIONS — the SMS is a second confirmation for a transaction that
+#   is already fully captured by a paired SMS with the same tx_id. For
+#   example MTN sends a low-info "Deposit made to your bank account
+#   number: ****XXXX..." alongside the rich "Your payment of GHS X to
+#   <bank> has been completed..." SMS. Accepting the low-info one (which
+#   arrives first) silently dedupes the real transaction out.
+_FAILURE_MARKERS = re.compile(
+    r"(?:"
+    r"has\s+failed\s+at|"
+    r"failed\s+to\s+(?:send|receive|complete|debit|credit)|"
+    r"exceeded\s+your\s+daily\s+transaction\s+limit|"
+    r"transaction\s+(?:declined|rejected|reversed|failed|unsuccessful)|"
+    r"could\s+not\s+be\s+(?:completed|processed)|"
+    r"insufficient\s+(?:funds|balance)|"
+    r"expired\s+and\s+has\s+been\s+returned"
+    r")",
+    re.IGNORECASE,
+)
+
+_NOTIFICATION_ONLY = re.compile(
+    r"^Deposit\s+made\s+to\s+your\s+bank\s+account\s+number",
+    re.IGNORECASE,
+)
+
+
+def _is_failure_notice(sms_text: str) -> bool:
+    """True if the SMS describes a transaction that did not execute, or is a
+    low-info duplicate notification whose paired SMS carries the real data."""
+    return bool(
+        _FAILURE_MARKERS.search(sms_text) or _NOTIFICATION_ONLY.search(sms_text)
+    )
 
 
 class MoMoParser:
@@ -32,6 +73,17 @@ class MoMoParser:
         Returns:
             ParseResult with all extracted fields and a confidence score.
         """
+        if _is_failure_notice(sms_text):
+            return ParseResult(
+                raw_sms=sms_text,
+                telco="unknown",
+                tx_type="unknown",
+                template_id=None,
+                confidence=0.0,
+                match_mode="none",
+                amount=None,
+            )
+
         telco, telco_conf = self.detector.detect(sms_text, sender_id)
 
         if telco == "unknown":

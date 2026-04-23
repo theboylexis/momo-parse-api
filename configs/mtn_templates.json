@@ -79,6 +79,25 @@
       "notes": "Reference field sometimes contains 'NAME,phone from VODAFONE/TELECEL' for cross-network receipts — parse sub-fields if present"
     },
     {
+      "id": "mtn_money_transfer_deposit",
+      "tx_type": "transfer_received",
+      "description": "Cross-bank money-transfer deposit into MoMo wallet — includes sender name and a transfer token, no balance field",
+      "example": "Money Transfer Deposit received for GHS 66.00 from NANA YAA AFERWAAH AFRAM BUAH Token: 998395013143 Transaction ID: 52070900912. TRANSACTION FEE IS 0",
+      "pattern": "^Money Transfer Deposit received for GHS\\s*(?P<amount>[\\d,]+\\.?\\d*) from (?P<counterparty_name>[A-Za-z][A-Za-z\\s'.\\-&]+?)\\s+Token:\\s*(?P<reference>\\d+)\\s+Transaction ID:\\s*(?P<tx_id>\\d+)\\.?\\s*(?:TRANSACTION FEE(?:\\s+IS)?|Fee charged:)\\s*(?P<fee>[\\d.]+)",
+      "fields": {
+        "amount": "group:amount",
+        "counterparty_name": "group:counterparty_name",
+        "tx_id": "group:tx_id",
+        "reference": "group:reference",
+        "fee": "group:fee",
+        "balance": null,
+        "counterparty_phone": null,
+        "date": null,
+        "time": null
+      },
+      "notes": "No balance field in this format. The token is a cross-network transfer reference; we surface it via the reference field."
+    },
+    {
       "id": "mtn_cash_out",
       "tx_type": "cash_out",
       "description": "Cash withdrawal at an agent or institution",
