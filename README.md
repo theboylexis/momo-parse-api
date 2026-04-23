@@ -42,9 +42,9 @@ Raw SMS
   ↓
 Parser ─────────── 33 regex templates (11 MTN, 22 Telecel) + fuzzy fallback
   ↓
-ML Categorizer ─── RandomForest, 406 labeled samples, 15 categories
+ML Categorizer ─── RandomForest, 7,194 labeled samples (2,073 real + synthetic), 15 categories
   ↓
-Financial Indexes ─ 5 formalized indexes → Composite Health Score
+Financial Indexes ─ 5 formalized indexes → Composite Health Score + per-score drivers
   ↓
 Structured JSON
 ```
@@ -94,15 +94,15 @@ Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted ind
 
 ## Validation
 
-- **6,400+ tests** passing — 6,200 synthetic corpus rows + 91 real-SMS corpus + 150 unit/integration tests
-- **Validated against systematic template-drift mutations** — a 131-case harness applies realistic telco drift (verb swaps, currency-symbol drift, field reorder, whitespace bloat, SMS truncation, label abbreviation, promo injection) across every registered template and asserts `amount`, `tx_type`, and `balance` still recover
-- **Fuzzy fallback** — when no regex matches exactly, a token-overlap + generic field regex path recovers partial data with a capped confidence (≤0.6), so the Financial Health Index never silently loses a transaction to format drift
-- **Drift telemetry** — every fuzzy fallback emits a structured `parse.fuzzy_fallback` JSON log line (`template_id`, `missing_critical_fields`, SHA-256 SMS hash — no raw SMS body) so aggregating a week of production logs surfaces exactly which templates need a v3 revision
-- **100 real Telecel transactions** validated against official statement
-- **80+ real MTN transactions** validated against real SMS
-- **27 statement transaction types** mapped to parser templates
+- **6,500+ tests** passing — synthetic corpus + 2,073-row real corpus (956 MTN, 1,117 Telecel, PII hashed at import) + unit/integration tests
+- **[Template Drift Benchmark](docs/drift_benchmark.md)** — 209-case harness applies seven curated telco-drift mutations (verb swap, currency-symbol drift, field reorder, whitespace bloat, SMS truncation, label abbreviation, promo injection) across every registered template and asserts `amount`, `tx_type`, `telco`, and `balance` still recover
+- **[Real-data end-to-end validation](docs/build_log.md)** — pipeline exercised against a consented 2,724-message SMS export; surfaced and fixed four parser-level defects (failed-transaction counting, fuzzy-match hallucination of airtime purchases, duplicate-notification dedup bug, sender whitelist gap) that synthetic fixtures did not expose
+- **[MFH Weight Sensitivity Analysis](docs/sensitivity_analysis.md)** — ±0.10 perturbation of each sub-index weight, with proportional redistribution so Σw = 1 is preserved, shifts the composite score by at most 6.3 points across six canonical user profiles — the published 30/25/20/15/10 weighting is robust to moderate disagreement
+- **Fuzzy fallback with product-noun gating** — when no regex matches exactly, a token-overlap + generic field regex path recovers partial data at capped confidence (≤0.6). Fuzzy candidates for product-bearing tx_types (airtime, bundle, loan, interest) are rejected unless the SMS contains the product noun, preventing cross-category contamination
+- **Failed / duplicate-notification filter** — SMS describing failures ("failed to send", "exceeded your daily transaction limit", "has failed at", "expired and has been returned") and low-info duplicate notifications are rejected at the parser stage with `match_mode=none`, preventing phantom transactions from inflating category totals
+- **Drift telemetry** — every fuzzy fallback emits a structured `parse.fuzzy_fallback` JSON log line (`template_id`, `missing_critical_fields`, SHA-256 SMS hash — no raw SMS body) so aggregating a week of production logs surfaces exactly which templates need a revision
+- **[Data minimization audit](docs/data_minimization.md)** — every pathway raw SMS takes through the system is traced; no durable store retains it. Known gaps (TTL on job results, counterparty-store user isolation, DSR endpoint) flagged rather than elided
 - Parser covers **~95% of national MoMo transaction volume** by category (per BoG Q1 2025 report)
-- Handles multi-service SMS variants, mixed-case names, fee spacing variants
 
 *Source: Bank of Ghana, FinTech and Innovation Office. FinTech Sector Report: 2025 Q1.*
 
@@ -170,6 +170,12 @@ curl -X POST https://momo-parse.up.railway.app/v1/parse \
 
 ## Docs
 
+- [Build Log](docs/build_log.md) — running plain-language record of every non-trivial change, with paper-section framing
+- [Template Drift Benchmark](docs/drift_benchmark.md) — the 209-case reproducible benchmark for regex-based MoMo SMS parsers
+- [MFH Weight Sensitivity Analysis](docs/sensitivity_analysis.md) — robustness of the 30/25/20/15/10 weighting under ±0.10 perturbation
+- [Data Minimization Audit](docs/data_minimization.md) — per-pathway verification that raw SMS never persists; honest disclosure of what derived data does
+- [ML Evaluation](docs/ml_evaluation.md) — machine-generated CV scores, baselines, confusion matrix, with a known-limitations section on rule-derived labels
+- [Improvements Roadmap](docs/improvements.md) — tagged inventory of solidify/gap/new-scope items
 - [ML Benchmark](docs/ml_benchmark.md) — model performance, feature importances, honest limitations
 - [Project Board](https://github.com/users/theboylexis/projects/1) — roadmap and task tracking
 
