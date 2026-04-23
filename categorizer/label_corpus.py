@@ -73,9 +73,11 @@ def _label(tx_type: str, reference: str, counterparty: str, amount: str) -> str:
 
 
 def run():
-    corpus_files = [
-        os.path.join(ROOT, "corpus", "real_sms_corpus.csv"),
-        os.path.join(ROOT, "corpus", "synthetic_sms_corpus.csv"),
+    # Per-file provenance tag — propagated to the ``source`` column so the
+    # evaluation harness can hold out real rows for generalization testing.
+    corpus_files: list[tuple[str, str]] = [
+        (os.path.join(ROOT, "corpus", "real_sms_corpus.csv"),      "real"),
+        (os.path.join(ROOT, "corpus", "synthetic_sms_corpus.csv"), "synthetic"),
     ]
 
     out_path = os.path.join(ROOT, "categorizer", "labeled_data.csv")
@@ -87,10 +89,10 @@ def run():
         writer.writerow([
             "raw_sms", "telco", "tx_type", "amount",
             "counterparty_name", "counterparty_phone",
-            "balance", "fee", "reference", "category"
+            "balance", "fee", "reference", "category", "source",
         ])
 
-        for path in corpus_files:
+        for path, source in corpus_files:
             if not os.path.exists(path):
                 print(f"  SKIP (not found): {path}", file=sys.stderr)
                 continue
@@ -121,6 +123,7 @@ def run():
                         row.get("fee", ""),
                         row.get("reference", ""),
                         category,
+                        source,
                     ])
                     written += 1
 
