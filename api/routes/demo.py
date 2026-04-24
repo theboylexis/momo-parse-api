@@ -475,6 +475,59 @@ _HTML = """\
     color: #999;
     margin-top: 2px;
   }
+  .score-band-desc {
+    font-size: 11px;
+    color: #777;
+    margin-top: 8px;
+    line-height: 1.4;
+    max-width: 260px;
+  }
+
+  .scoring-window {
+    font-size: 12px;
+    color: #888;
+    margin: -8px 0 20px;
+    padding: 8px 12px;
+    background: #fafafa;
+    border-radius: 6px;
+    border-left: 3px solid #0D9373;
+  }
+  .scoring-window strong { color: #444; font-weight: 600; }
+
+  .drivers-section { margin-top: 24px; }
+  .drivers-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+  }
+  .driver-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 48px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .driver-name { color: #555; }
+  .driver-bar-track {
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .driver-bar-fill {
+    height: 100%;
+    background: #0D9373;
+    border-radius: 4px;
+    transition: width 0.6s ease-out;
+  }
+  .driver-pts { text-align: right; font-weight: 600; color: #333; }
+  @media (max-width: 480px) {
+    .driver-row { grid-template-columns: 110px 1fr 40px; font-size: 11px; }
+  }
 
   .kpi-grid {
     display: grid;
@@ -833,6 +886,7 @@ _HTML = """\
 
     <div id="confidence-bar" class="confidence-bar"></div>
     <div class="meta-line" id="meta-line"></div>
+    <div class="scoring-window" id="scoring-window" style="display:none;"></div>
 
     <div class="overview-grid">
       <div class="score-card">
@@ -844,8 +898,14 @@ _HTML = """\
         <div class="score-num" id="score-num">--</div>
         <div class="score-label" id="score-label"></div>
         <div class="score-sub">Health Score</div>
+        <div class="score-band-desc" id="score-band-desc"></div>
       </div>
       <div class="kpi-grid" id="kpis"></div>
+    </div>
+
+    <div class="drivers-section" id="drivers-section" style="display:none;">
+      <div class="drivers-title">Score Drivers</div>
+      <div id="drivers-list"></div>
     </div>
 
     <div class="section" id="months-section">
@@ -1064,23 +1124,84 @@ function renderReport(data) {
     '<strong>' + (summary.transaction_count || 0) + '</strong> transactions' +
     (range ? ' across <strong>' + months.length + '</strong> months (' + range + ')' : '');
 
-  // ── Health score ──
+  // ── Health score + calibrated band ──
+  // Band label + description come from the API's score_band field (single
+  // source of truth in enricher/analytics.py::_SCORE_BANDS). Fall back to
+  // a coarse threshold only if the API response predates score_band.
   const score = data.financial_health_score || 0;
+  const fiForScore = data.financial_indexes || {};
+  const band = fiForScore.score_band || null;
+  const bandLabel = band ? band.label
+    : (score >= 81 ? 'Strong' : score >= 61 ? 'Good' : score >= 41 ? 'Fair' : 'Poor');
+  const bandColor = ({
+    Poor: '#C53030', Fair: '#D69E2E', Good: '#0D9373', Strong: '#065F46'
+  })[bandLabel] || '#0D9373';
+
   const ring = document.getElementById('ring');
   const circ = 263.89;
   const offset = circ - (score / 100) * circ;
-  const color = '#0D9373';
-
-  ring.style.stroke = color;
+  ring.style.stroke = bandColor;
   requestAnimationFrame(() => { ring.style.strokeDashoffset = offset; });
 
   const numEl = document.getElementById('score-num');
   numEl.textContent = score;
-  numEl.style.color = color;
-  const label = score >= 70 ? 'Healthy' : score >= 45 ? 'Fair' : 'Needs Attention';
+  numEl.style.color = bandColor;
   const labelEl = document.getElementById('score-label');
-  labelEl.textContent = label;
-  labelEl.style.color = color;
+  labelEl.textContent = bandLabel;
+  labelEl.style.color = bandColor;
+
+  const bandDescEl = document.getElementById('score-band-desc');
+  bandDescEl.textContent = band && band.description ? band.description : '';
+
+  // ── Scoring window (rolling N months | lifetime) ──
+  const winEl = document.getElementById('scoring-window');
+  const sw = fiForScore.scoring_window || null;
+  if (sw) {
+    let text;
+    if (sw.mode === 'rolling' && sw.start && sw.end) {
+      text = 'Scoring window: <strong>last ' + sw.months + ' months</strong> ' +
+        '(' + sw.start + ' – ' + sw.end + ')';
+      if (sw.transactions_excluded) {
+        text += ' — ' + sw.transactions_excluded +
+          ' older transaction' + (sw.transactions_excluded !== 1 ? 's' : '') +
+          ' excluded from scoring';
+      }
+    } else {
+      text = 'Scoring window: <strong>lifetime</strong> (all provided data)';
+    }
+    winEl.innerHTML = text;
+    winEl.style.display = '';
+  } else {
+    winEl.style.display = 'none';
+  }
+
+  // ── Score drivers — per-sub-index contribution to the composite ──
+  const driverLabels = {
+    savings_rate: 'Savings Rate',
+    income_stability: 'Income Stability',
+    expense_volatility: 'Expense Stability',
+    counterparty_concentration: 'Counterparty Diversity',
+    transaction_velocity: 'Transaction Velocity',
+  };
+  const driversSec = document.getElementById('drivers-section');
+  const drivers = fiForScore.score_drivers || [];
+  if (drivers.length) {
+    const maxContrib = Math.max(...drivers.map(d => d.contribution_pp || 0), 1);
+    document.getElementById('drivers-list').innerHTML = drivers.map(d => {
+      const pct = ((d.contribution_pp || 0) / maxContrib) * 100;
+      const name = driverLabels[d.index] || d.index;
+      return '<div class="driver-row">' +
+        '<div class="driver-name">' + name + '</div>' +
+        '<div class="driver-bar-track">' +
+          '<div class="driver-bar-fill" style="width:' + pct.toFixed(0) + '%;background:' + bandColor + '"></div>' +
+        '</div>' +
+        '<div class="driver-pts">+' + (d.contribution_pp || 0) + ' pts</div>' +
+      '</div>';
+    }).join('');
+    driversSec.style.display = '';
+  } else {
+    driversSec.style.display = 'none';
+  }
 
   // ── KPIs ──
   const sa = data.savings_analysis || {};
