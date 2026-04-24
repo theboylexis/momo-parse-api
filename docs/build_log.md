@@ -13,6 +13,61 @@ Companion docs: [improvements.md](improvements.md), [research_paper_structure.md
 
 ---
 
+## 2026-04-24 — Rolling scoring window + calibrated score bands
+
+**What changed**
+- [enricher/analytics.py](../enricher/analytics.py) — `compute_financial_indexes` now accepts a `window_months` parameter (default 6, `None` for lifetime) and applies a rolling window to the transactions it scores. Only the MFH score and its sub-indexes are windowed; the surrounding narrative (monthly breakdown, insights, cash flow totals) still reflects all provided data, matching consumer-credit convention where the score reflects recent behavior but the statement shows full history. New `_score_band()` helper maps every composite to one of four calibrated bands (Poor / Fair / Good / Strong) with published thresholds.
+- [api/models.py](../api/models.py) — new `window_months` field on `EnrichRequest` (Pydantic-validated to 1–60 or null); new `ScoreBand` and `ScoringWindow` response models exposed on `FinancialIndexes`. Every `/v1/report` and `/v1/profile` response now carries the band label + range + lender-facing description and the actual date range the score reflects.
+- [api/routes/report.py](../api/routes/report.py), [api/routes/enrich.py](../api/routes/enrich.py), [enricher/jobs.py](../enricher/jobs.py) — thread `body.window_months` through both sync and async paths.
+- [scripts/demo_report.py](../scripts/demo_report.py) — new `--score-window` flag (default 6, pass 0 for lifetime); the printed report surfaces the band label, the band's plain-English description, and the actual date range the score reflects including how many older transactions were excluded.
+- [tests/test_report.py](../tests/test_report.py) — four new tests: window defaults to 6 months and excludes older rows, lifetime mode includes everything, every score gets a band in one of the four buckets, and bands tile 0–100 contiguously without gaps or overlaps. API-level test asserts `score_band` and `scoring_window` are on the `/v1/report` response.
+- [README.md](../README.md) — documents the default window, the band thresholds, and the override mechanism.
+
+**Why it matters**
+
+Two gaps in the score's defensibility closed:
+
+First, **users providing different amounts of history were being scored on different windows** without anyone noticing. A demo sample with two months produced one score; a real user pasting four months of data produced another; a three-year export produced a third. Even for the same person on the same day, you got different numbers depending on what you fed in. That's not a credit-scoring tool — that's a sensitivity to input length masquerading as a score. Switching to a rolling 6-month default (FICO / M-Shwari / Tala convention) fixes it at the source: scores are now directly comparable across users and across timeframes, and the API response carries the exact window used so a reviewer can verify the claim. Callers wanting a lifetime view pass `window_months=null` explicitly.
+
+Second, **"27/100" is meaningless without a published threshold table.** A lender needs to know whether 27 is "reject" or "small facility with collateral" or "investigate further." Calibrated bands with documented thresholds turn the bare number into an auditable decision-support signal. The bands are symmetric-ish (0–40 Poor / 41–60 Fair / 61–80 Good / 81–100 Strong) so "Fair" captures the broad middle where most first-time users sit, and the extremes are reserved for decisively weak / strong profiles. Thresholds live in one `_SCORE_BANDS` list that both the runtime and the tests read from — band assignment is a pure lookup, no black box.
+
+Concrete impact on the friend's data: the lifetime score (3.5 years) was 27/100 "Poor," dragged down by old volatile patterns; the default 6-month rolling window gives 43/100 "Fair," which is the honest reflection of *current* financial standing. Same data, same formula, different and more truthful answer.
+
+**How it works**
+
+*Rolling window.* `_apply_rolling_window(transactions, window_months)` finds the latest dated transaction, computes `window_start = window_end - 30 × window_months` days, and keeps only transactions whose date is ≥ `window_start` (undated transactions are kept because they can't be windowed — the enricher's existing logic already handles them by smearing uniformly across months). Lifetime mode (`window_months=None`) short-circuits: the full list is returned untouched. The 30-day-per-month approximation is intentional; calendar-exact windowing would add a `dateutil.relativedelta` dependency for a sub-day difference that doesn't change any score.
+
+*Score bands.* `_SCORE_BANDS` is a list of `(low, high, label, description)` tuples covering 0–100 contiguously. `_score_band(score)` does a linear scan to find the containing band. A dedicated test asserts the bands tile the full range without gaps or overlaps, so changing the thresholds is a one-line edit with a test safety net.
+
+*Back-compat for the async path.* `run_enrich_job` accepts `window_months` as an optional kwarg, and only passes it through when the caller supplied one, so any existing caller (internal or external) that doesn't know about the parameter continues to get the default window from `compute_*` rather than failing with a `TypeError`.
+
+**How to verify**
+
+```bash
+# Sync path
+curl -X POST http://localhost:8000/v1/report \
+  -H "X-API-Key: sk-sandbox-momoparse" \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"sms_text":"..."}],"window_months":6}' | jq '.financial_indexes.score_band, .financial_indexes.scoring_window'
+
+# End-to-end demo
+python scripts/demo_report.py "<xml>"                        # default 6-month rolling
+python scripts/demo_report.py "<xml>" --score-window 0       # lifetime
+python scripts/demo_report.py "<xml>" --score-window 12      # 12-month rolling
+
+# Tests
+python -m pytest tests/test_report.py::test_scoring_window_defaults_to_6_months \
+                 tests/test_report.py::test_scoring_window_lifetime_includes_everything \
+                 tests/test_report.py::test_score_band_assigned_to_every_score \
+                 tests/test_report.py::test_report_exposes_score_band_and_window -v
+```
+
+**Paper framing (section — Scoring methodology)**
+
+> MomoParse's composite health score is computed over a rolling window of the most recent six months of activity, consistent with consumer-credit convention (FICO, M-Shwari, Tala) and making scores directly comparable across users regardless of how much transaction history they provide. Every score is returned alongside its calibrated band — Poor (0–40), Fair (41–60), Good (61–80), Strong (81–100) — with published, documented thresholds and per-band lender-facing interpretations. Band assignment is a pure lookup on the composite, not a separate model, so the entire scoring pipeline from raw SMS to band label is end-to-end auditable. Callers requiring a lifetime view can override the window explicitly, and the response carries the actual date range the score reflects for reviewer verification.
+
+---
+
 ## 2026-04-23 — End-to-end demo surfaces + fixes four real parser bugs
 
 **What changed**

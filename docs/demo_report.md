@@ -9,16 +9,18 @@ Date range covered:                  2022-10-17 → 2026-04-22
 Months of activity:                  43
 
 ----------------------------------------------------------------
- FINANCIAL HEALTH SCORE:  27 / 100
+ FINANCIAL HEALTH SCORE:  43 / 100   —   Fair
 ----------------------------------------------------------------
+ Borderline profile — some positive signals, but volatility or savings gaps warrant a smaller initial facility or stronger collateral.
+ Scoring window: last 6 months (2025-10-24 -> 2026-04-22) — 1484 older tx excluded
 
 What's driving the score:
 
+  counterparty_concentration      contributes  15 pts  (normalized 0.98)
+  income_stability                contributes  11 pts  (normalized 0.43)
   transaction_velocity            contributes  10 pts  (normalized 1.00)
-  counterparty_concentration      contributes   9 pts  (normalized 0.58)
-  savings_rate                    contributes   8 pts  (normalized 0.27)
-  income_stability                contributes   0 pts  (normalized 0.00)
-  expense_volatility              contributes   0 pts  (normalized 0.00)
+  expense_volatility              contributes   7 pts  (normalized 0.35)
+  savings_rate                    contributes   0 pts  (normalized 0.00)
 
 Cash flow:
   Total income:         GHS 973,249.17

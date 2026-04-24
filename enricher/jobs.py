@@ -140,7 +140,12 @@ async def _deliver_webhook(webhook_url: str, payload: dict[str, Any]) -> None:
         logger.warning("Webhook delivery failed for %s", webhook_url)
 
 
-async def run_enrich_job(job: Job, messages: list[dict], mode: str = "enrich") -> None:
+async def run_enrich_job(
+    job: Job,
+    messages: list[dict],
+    mode: str = "enrich",
+    window_months: Optional[int] = None,
+) -> None:
     """
     Background task: parse + enrich/profile all messages, store result, fire webhook.
     mode: "enrich" | "profile"
@@ -184,10 +189,14 @@ async def run_enrich_job(job: Job, messages: list[dict], mode: str = "enrich") -
 
         elapsed = round((time.monotonic() - t0) * 1000, 2)
 
+        # Preserve back-compat: only pass window_months when the caller
+        # supplied one, so callers that don't know about the parameter
+        # continue to get the default window from compute_*.
+        kw = {"window_months": window_months} if window_months is not None else {}
         if mode == "profile":
-            analytics = compute_profile(tx_dicts)
+            analytics = compute_profile(tx_dicts, **kw)
         elif mode == "report":
-            analytics = compute_report(tx_dicts)
+            analytics = compute_report(tx_dicts, **kw)
         else:
             analytics = compute_summary(tx_dicts)
 

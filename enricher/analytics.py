@@ -19,8 +19,15 @@ from __future__ import annotations
 import math
 import statistics
 from collections import Counter, defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any, Optional
+
+
+# Default MFH scoring window. Matches FICO / M-Shwari / Tala convention
+# where a credit score reflects the most recent N months of activity,
+# making scores comparable across users regardless of how much history
+# they provide.
+DEFAULT_WINDOW_MONTHS = 6
 
 
 # ── Income vs expense classification ─────────────────────────────────────────
@@ -167,9 +174,15 @@ def compute_summary(transactions: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def compute_profile(transactions: list[dict[str, Any]]) -> dict[str, Any]:
+def compute_profile(
+    transactions: list[dict[str, Any]],
+    window_months: Optional[int] = DEFAULT_WINDOW_MONTHS,
+) -> dict[str, Any]:
     """
     Compute a higher-level financial profile for credit scoring / lending use cases.
+
+    ``window_months`` is passed through to ``compute_financial_indexes``
+    to window the MFH scoring consistently with the rest of the API.
     """
     summary = compute_summary(transactions)
 
@@ -317,7 +330,7 @@ def compute_profile(transactions: list[dict[str, Any]]) -> dict[str, Any]:
         data_confidence = "low"
 
     # ── Formalized financial indexes ──────────────────────────────────────────
-    financial_indexes = compute_financial_indexes(transactions)
+    financial_indexes = compute_financial_indexes(transactions, window_months=window_months)
 
     return {
         "avg_monthly_income": avg_monthly_income,
@@ -337,10 +350,20 @@ def compute_profile(transactions: list[dict[str, Any]]) -> dict[str, Any]:
 # ── Monthly report ────────────────────────────────────────────────────────────
 
 
-def compute_report(transactions: list[dict[str, Any]]) -> dict[str, Any]:
+def compute_report(
+    transactions: list[dict[str, Any]],
+    window_months: Optional[int] = DEFAULT_WINDOW_MONTHS,
+) -> dict[str, Any]:
     """
     Generate a monthly financial report with spending insights, savings
     analysis, and budget recommendations from parsed+categorized transactions.
+
+    ``window_months`` restricts the scoring window used for the composite
+    Financial Health Score. The surrounding narrative (monthly breakdown,
+    insights) still reflects all provided data — only the MFH score and
+    its sub-indexes are windowed, matching consumer-credit convention
+    where the score reflects recent behavior but the statement shows full
+    history.
     """
     summary = compute_summary(transactions)
 
@@ -549,7 +572,7 @@ def compute_report(transactions: list[dict[str, Any]]) -> dict[str, Any]:
             })
 
     # ── Financial indexes & health score ──────────────────────────────────────
-    financial_indexes = compute_financial_indexes(transactions)
+    financial_indexes = compute_financial_indexes(transactions, window_months=window_months)
     health_score = financial_indexes["composite_health_score"]
 
     # Data confidence
@@ -574,8 +597,44 @@ def compute_report(transactions: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _apply_rolling_window(
+    transactions: list[dict[str, Any]],
+    window_months: Optional[int],
+) -> tuple[list[dict[str, Any]], Optional[date], Optional[date]]:
+    """
+    Restrict transactions to the most recent ``window_months`` months
+    relative to the latest dated transaction. Undated transactions are
+    kept (they cannot be windowed). When ``window_months`` is ``None``,
+    the input is returned unchanged (lifetime mode).
+
+    Returns ``(filtered_transactions, window_start, window_end)`` where
+    the window bounds describe the actual date range the score will
+    reflect; both are ``None`` in lifetime mode or if no dated
+    transactions exist.
+    """
+    if window_months is None:
+        return transactions, None, None
+
+    dated = [_parse_date(tx.get("date")) for tx in transactions]
+    dated_dates = [d for d in dated if d is not None]
+    if not dated_dates:
+        return transactions, None, None
+
+    window_end = max(dated_dates)
+    # Approximate month as 30 days — calendar-exact windowing would add a
+    # dateutil.relativedelta dependency for a sub-day difference.
+    window_start = window_end - timedelta(days=30 * window_months)
+
+    filtered = [
+        tx for tx, d in zip(transactions, dated)
+        if d is None or d >= window_start
+    ]
+    return filtered, window_start, window_end
+
+
 def compute_financial_indexes(
     transactions: list[dict[str, Any]],
+    window_months: Optional[int] = DEFAULT_WINDOW_MONTHS,
 ) -> dict[str, Any]:
     """
     Compute five formalized financial indexes from parsed transactions.
@@ -583,15 +642,32 @@ def compute_financial_indexes(
     Each index maps to a known telco credit scoring signal and is grounded
     in established financial methodology.
 
-    Returns a dict with each index value and a composite health score.
+    Parameters
+    ----------
+    transactions
+        Parsed + categorized transaction dicts.
+    window_months
+        Restrict scoring to the most recent N months of activity relative
+        to the latest dated transaction (default: 6). Set to ``None`` to
+        score lifetime. Consistent with industry practice (FICO, M-Shwari,
+        Tala) and makes scores comparable across users who provide
+        different amounts of history.
+
+    Returns a dict with each index value, a composite health score, its
+    calibrated band (Poor / Fair / Good / Strong), the score drivers, and
+    metadata describing the actual window used.
     """
+    windowed, window_start, window_end = _apply_rolling_window(
+        transactions, window_months
+    )
+
     # ── Gather per-month and per-counterparty data ─────────────────────────
     monthly_income: dict[str, float] = defaultdict(float)
     monthly_expense: dict[str, float] = defaultdict(float)
     cp_amounts: dict[str, float] = defaultdict(float)
     dates: list[date] = []
 
-    for tx in transactions:
+    for tx in windowed:
         amount = tx.get("amount") or 0.0
         d = _parse_date(tx.get("date"))
         if d:
@@ -625,7 +701,7 @@ def compute_financial_indexes(
     # Reference: Björkegren & Grissen (2018), mobile phone credit scoring
     if dates:
         days = max((max(dates) - min(dates)).days, 1)
-        tx_velocity = round(len(transactions) / days, 3)
+        tx_velocity = round(len(windowed) / days, 3)
     else:
         tx_velocity = 0.0
 
@@ -692,11 +768,20 @@ def compute_financial_indexes(
         "counterparty_concentration_hhi": counterparty_concentration,
         "expense_volatility": expense_volatility,
         "composite_health_score": health_score,
+        "score_band": _score_band(health_score),
         "score_drivers": score_drivers,
         "data_points": {
             "months": num_months,
-            "transactions": len(transactions),
+            "transactions": len(windowed),
             "counterparties": len(cp_amounts),
+        },
+        "scoring_window": {
+            "mode": "rolling" if window_months is not None else "lifetime",
+            "months": window_months,
+            "start": window_start.isoformat() if window_start else None,
+            "end":   window_end.isoformat()   if window_end   else None,
+            "transactions_in_window": len(windowed),
+            "transactions_excluded":  len(transactions) - len(windowed),
         },
     }
 
@@ -747,6 +832,41 @@ def _normalize(value: float, low: float, high: float) -> float:
     if high == low:
         return 0.0
     return max(0.0, min(1.0, (value - low) / (high - low)))
+
+
+# Calibrated score bands on the 0–100 composite. Four bands mirror the
+# FICO / Experian / Credit Karma convention of coarse-grained consumer-
+# credit labels, adapted to MFH's 0–100 scale so the meaning of a score
+# is legible to non-technical readers without inventing a new vocabulary.
+# The thresholds are deliberately symmetric-ish (widths 40/20/20/20) so
+# "Fair" captures the broad middle where most first-time users sit and
+# the two ends are reserved for decisively weak / strong profiles.
+_SCORE_BANDS: list[tuple[int, int, str, str]] = [
+    (0,  40,  "Poor",
+     "Transactional signals do not support extending credit without additional context."),
+    (41, 60,  "Fair",
+     "Borderline profile — some positive signals, but volatility or savings gaps warrant a smaller initial facility or stronger collateral."),
+    (61, 80,  "Good",
+     "Solid financial signals across most indexes — typical range for a working-age MoMo user with regular inflows."),
+    (81, 100, "Strong",
+     "Consistently high savings, stable income, diversified counterparties — top tier of MFH-visible profiles."),
+]
+
+
+def _score_band(score: int) -> dict[str, Any]:
+    """Map a 0-100 composite score to a calibrated band with label +
+    thresholds + plain-language interpretation. Thresholds are published
+    in ``_SCORE_BANDS`` so a lender (or a reviewer) can verify band
+    assignment is a pure lookup on the score, not a black box."""
+    for low, high, label, description in _SCORE_BANDS:
+        if low <= score <= high:
+            return {
+                "label": label,
+                "range": [low, high],
+                "description": description,
+            }
+    # Scores are clamped to [0, 100] upstream so this is defensive only.
+    return {"label": "Unknown", "range": [0, 0], "description": ""}
 
 
 # Index normalization bounds — (low, high) defining the 0→1 range.

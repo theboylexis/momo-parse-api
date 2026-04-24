@@ -286,6 +286,94 @@ async def test_report_includes_score_drivers(client):
         assert "contribution_pp" in d
 
 
+def test_scoring_window_defaults_to_6_months():
+    """Rolling 6-month window is the default; transactions older than the
+    window end-date − 6 months should be excluded from the scored totals."""
+    from enricher.analytics import compute_financial_indexes
+    # Latest tx is 2026-04-20. Default 6-month window: 2025-10-21..2026-04-20.
+    # The 2024-01 transactions should be excluded.
+    old_txs = [
+        {"tx_type": "transfer_received", "amount": 5000.0, "category": "sales_revenue",
+         "counterparty_name": "Ancient", "counterparty_phone": None, "date": "2024-01-10", "fee": 0.0},
+        {"tx_type": "transfer_sent", "amount": 4500.0, "category": "supplier_payment",
+         "counterparty_name": "Ancient2", "counterparty_phone": None, "date": "2024-01-20", "fee": 0.0},
+    ]
+    recent_txs = [
+        {"tx_type": "transfer_received", "amount": 1000.0, "category": "sales_revenue",
+         "counterparty_name": "Client A", "counterparty_phone": None, "date": "2026-02-10", "fee": 0.0},
+        {"tx_type": "transfer_sent", "amount": 300.0, "category": "supplier_payment",
+         "counterparty_name": "Supplier B", "counterparty_phone": None, "date": "2026-02-20", "fee": 0.0},
+        {"tx_type": "transfer_received", "amount": 1100.0, "category": "sales_revenue",
+         "counterparty_name": "Client C", "counterparty_phone": None, "date": "2026-04-10", "fee": 0.0},
+        {"tx_type": "transfer_sent", "amount": 320.0, "category": "supplier_payment",
+         "counterparty_name": "Supplier B", "counterparty_phone": None, "date": "2026-04-20", "fee": 0.0},
+    ]
+    result = compute_financial_indexes(old_txs + recent_txs)
+    sw = result["scoring_window"]
+    assert sw["mode"] == "rolling"
+    assert sw["months"] == 6
+    assert sw["transactions_in_window"] == 4
+    assert sw["transactions_excluded"] == 2
+    assert sw["end"] == "2026-04-20"
+
+
+def test_scoring_window_lifetime_includes_everything():
+    """window_months=None scores all provided transactions regardless of age."""
+    from enricher.analytics import compute_financial_indexes
+    txs = [
+        {"tx_type": "transfer_received", "amount": 1000.0, "category": "sales_revenue",
+         "counterparty_name": "A", "counterparty_phone": None, "date": "2024-01-10", "fee": 0.0},
+        {"tx_type": "transfer_received", "amount": 1000.0, "category": "sales_revenue",
+         "counterparty_name": "B", "counterparty_phone": None, "date": "2026-04-10", "fee": 0.0},
+    ]
+    result = compute_financial_indexes(txs, window_months=None)
+    sw = result["scoring_window"]
+    assert sw["mode"] == "lifetime"
+    assert sw["months"] is None
+    assert sw["transactions_in_window"] == 2
+    assert sw["transactions_excluded"] == 0
+
+
+def test_score_band_assigned_to_every_score():
+    """Every composite score maps to one of four published bands."""
+    from enricher.analytics import compute_financial_indexes, _SCORE_BANDS
+    txs = [
+        {"tx_type": "transfer_received", "amount": 1000.0, "category": "sales_revenue",
+         "counterparty_name": "A", "counterparty_phone": None, "date": "2026-02-10", "fee": 0.0},
+        {"tx_type": "transfer_sent", "amount": 300.0, "category": "supplier_payment",
+         "counterparty_name": "B", "counterparty_phone": None, "date": "2026-02-20", "fee": 0.0},
+        {"tx_type": "transfer_received", "amount": 1100.0, "category": "sales_revenue",
+         "counterparty_name": "C", "counterparty_phone": None, "date": "2026-03-10", "fee": 0.0},
+        {"tx_type": "transfer_sent", "amount": 320.0, "category": "supplier_payment",
+         "counterparty_name": "B", "counterparty_phone": None, "date": "2026-03-20", "fee": 0.0},
+    ]
+    result = compute_financial_indexes(txs)
+    band = result["score_band"]
+    assert band["label"] in {"Poor", "Fair", "Good", "Strong"}
+    low, high = band["range"]
+    assert low <= result["composite_health_score"] <= high
+    # Band thresholds must tile 0..100 without gaps or overlaps.
+    all_bands = sorted(_SCORE_BANDS, key=lambda b: b[0])
+    assert all_bands[0][0] == 0 and all_bands[-1][1] == 100
+    for curr, nxt in zip(all_bands, all_bands[1:]):
+        assert nxt[0] == curr[1] + 1, f"band gap between {curr[1]} and {nxt[0]}"
+
+
+async def test_report_exposes_score_band_and_window(client):
+    resp = await client.post("/v1/report", headers=HEADERS, json={
+        "messages": [
+            {"sms_text": _MTN_TRANSFER_SENT},
+            {"sms_text": _MTN_TRANSFER_RECEIVED},
+        ]
+    })
+    assert resp.status_code == 200
+    indexes = resp.json()["financial_indexes"]
+    assert indexes.get("score_band") is not None
+    assert indexes["score_band"]["label"] in {"Poor", "Fair", "Good", "Strong"}
+    assert indexes.get("scoring_window") is not None
+    assert indexes["scoring_window"]["mode"] in {"rolling", "lifetime"}
+
+
 def test_compute_report_spending_insight_present():
     from enricher.analytics import compute_report
     txs = [

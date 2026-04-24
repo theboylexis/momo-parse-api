@@ -120,7 +120,8 @@ async def enrich(
             webhook_url=body.webhook_url,
         )
         background_tasks.add_task(
-            job_store.run_enrich_job, job, messages_raw, "enrich"
+            job_store.run_enrich_job, job, messages_raw, "enrich",
+            body.window_months,
         )
         return EnrichResponse(
             request_id=request_id,
@@ -183,7 +184,8 @@ async def profile(
             webhook_url=body.webhook_url,
         )
         background_tasks.add_task(
-            job_store.run_enrich_job, job, messages_raw, "profile"
+            job_store.run_enrich_job, job, messages_raw, "profile",
+            body.window_months,
         )
         return ProfileResponse(
             request_id=request_id,
@@ -193,7 +195,7 @@ async def profile(
 
     t0 = time.monotonic()
     tx_dicts = _parse_and_categorize(body.messages)
-    data = compute_profile(tx_dicts)
+    data = compute_profile(tx_dicts, window_months=body.window_months)
     elapsed = round((time.monotonic() - t0) * 1000, 2)
 
     return ProfileResponse(

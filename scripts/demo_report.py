@@ -115,9 +115,27 @@ def _format_report(data: dict, *, n_messages_in: int, n_parsed: int) -> str:
     lines.append("")
 
     # ── Headline ──────────────────────────────────────────────────────────────
+    band = indexes.get("score_band") or {}
+    band_label = band.get("label", "")
     lines.append("-" * 64)
-    lines.append(f" FINANCIAL HEALTH SCORE:  {score} / 100")
+    headline = f" FINANCIAL HEALTH SCORE:  {score} / 100"
+    if band_label:
+        headline += f"   —   {band_label}"
+    lines.append(headline)
     lines.append("-" * 64)
+    if band.get("description"):
+        lines.append(f" {band['description']}")
+    sw = indexes.get("scoring_window") or {}
+    if sw:
+        if sw.get("mode") == "rolling":
+            lines.append(
+                f" Scoring window: last {sw.get('months')} months "
+                f"({sw.get('start')} -> {sw.get('end')})"
+                + (f" — {sw.get('transactions_excluded')} older tx excluded"
+                   if sw.get("transactions_excluded") else "")
+            )
+        else:
+            lines.append(" Scoring window: lifetime (all provided data)")
     lines.append("")
 
     # ── Score drivers ─────────────────────────────────────────────────────────
@@ -228,7 +246,13 @@ def main() -> None:
     ap.add_argument("xml_path", type=Path, help="Path to SMS XML export")
     ap.add_argument("--months", type=int, default=None,
                     help="Only include SMS from the last N months "
-                         "(default: all)")
+                         "at the XML-parsing stage (default: all). This "
+                         "is a pre-filter; the score itself is windowed "
+                         "separately via --score-window.")
+    ap.add_argument("--score-window", type=int, default=6,
+                    help="MFH scoring window in months (default 6). "
+                         "Pass 0 for lifetime scoring. Matches the API's "
+                         "window_months parameter on /v1/report.")
     ap.add_argument("--write", type=Path, default=None,
                     help="Also write the report to this path (e.g. "
                          "docs/demo_report.md)")
@@ -292,7 +316,8 @@ def main() -> None:
     print(f"[demo] Unparsed/marketing: {n_unparsed}   "
           f"Duplicate tx_ids skipped: {n_dupes}   "
           f"Unique transactions: {n_parsed}", file=sys.stderr)
-    data = compute_report(tx_dicts)
+    score_window = None if args.score_window == 0 else args.score_window
+    data = compute_report(tx_dicts, window_months=score_window)
 
     report = _format_report(data, n_messages_in=len(messages), n_parsed=n_parsed)
     print(report)

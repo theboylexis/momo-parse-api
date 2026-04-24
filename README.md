@@ -73,6 +73,17 @@ A single composite score (0–100) combining five formalized financial indexes:
 
 Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted indexes (where higher = worse) use (1 − x) so higher always means healthier.
 
+**Rolling window (default 6 months).** MFH scores the most recent 6 months of activity relative to the latest dated transaction — consistent with FICO / M-Shwari / Tala convention so scores are comparable across users regardless of how much history they provide. Callers can override via `window_months` (1–60 months) or pass `null` for lifetime scoring.
+
+**Calibrated score bands.** Every composite maps to a four-band lender-facing label with published thresholds:
+
+| Band | Range | Interpretation |
+|---|---:|---|
+| **Poor** | 0–40 | Transactional signals do not support extending credit without additional context |
+| **Fair** | 41–60 | Borderline — some positive signals, volatility or savings gaps warrant a smaller facility |
+| **Good** | 61–80 | Solid financial signals across most indexes |
+| **Strong** | 81–100 | Consistently high savings, stable income, diversified counterparties |
+
 ## Supported Telcos & Transaction Types
 
 | Telco | Templates |

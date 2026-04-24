@@ -100,6 +100,16 @@ class EnrichRequest(BaseModel):
         None,
         description="If provided and message count >= 500, results are POSTed here when ready.",
     )
+    window_months: Optional[int] = Field(
+        6,
+        ge=1,
+        le=60,
+        description=(
+            "Score the most recent N months of activity relative to the "
+            "latest dated transaction. Default 6 — consistent with FICO / "
+            "M-Shwari / Tala convention. Set to null for lifetime scoring."
+        ),
+    )
 
 
 class CategoryBreakdown(BaseModel):
@@ -154,6 +164,25 @@ class ScoreDriver(BaseModel):
     )
 
 
+class ScoreBand(BaseModel):
+    label: str = Field(description="Calibrated band name: Poor | Fair | Good | Strong.")
+    range: list[int] = Field(
+        description="Inclusive [low, high] score range for this band. Published thresholds — band assignment is a pure lookup.",
+    )
+    description: str = Field(description="One-sentence lender-facing interpretation of the band.")
+
+
+class ScoringWindow(BaseModel):
+    mode: str = Field(description="'rolling' (last N months) or 'lifetime' (all provided data).")
+    months: Optional[int] = Field(None, description="Window size in months when mode is 'rolling'.")
+    start: Optional[str] = Field(None, description="ISO date of the earliest transaction considered.")
+    end:   Optional[str] = Field(None, description="ISO date of the latest transaction considered.")
+    transactions_in_window: int = Field(description="Transactions used for scoring.")
+    transactions_excluded: int = Field(
+        description="Transactions older than the window that were excluded from scoring (0 in lifetime mode)."
+    )
+
+
 class FinancialIndexes(BaseModel):
     savings_rate: float = Field(description="(Income - Expenses) / Income × 100. Standard personal finance metric.")
     transaction_velocity: float = Field(description="Transactions per day. Proxy for economic activity.")
@@ -167,11 +196,19 @@ class FinancialIndexes(BaseModel):
         description="Normalized std deviation of monthly spending. Lower = more predictable."
     )
     composite_health_score: int = Field(description="Weighted composite of all indexes, 0–100.")
+    score_band: Optional[ScoreBand] = Field(
+        None,
+        description="Calibrated band (Poor / Fair / Good / Strong) with published thresholds.",
+    )
     score_drivers: list[ScoreDriver] = Field(
         default_factory=list,
         description="Per-index decomposition of the composite score. Sorted by contribution descending.",
     )
     data_points: Optional[dict] = Field(None, description="Months, transactions, and counterparties used.")
+    scoring_window: Optional[ScoringWindow] = Field(
+        None,
+        description="The actual date range the score reflects. Rolling (default 6 months) or lifetime.",
+    )
 
 
 class ProfileResponse(BaseModel):

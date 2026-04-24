@@ -81,7 +81,8 @@ async def report(
             webhook_url=body.webhook_url,
         )
         background_tasks.add_task(
-            job_store.run_enrich_job, job, messages_raw, "report"
+            job_store.run_enrich_job, job, messages_raw, "report",
+            body.window_months,
         )
         return ReportResponse(
             request_id=request_id,
@@ -92,7 +93,7 @@ async def report(
     # Small batches → sync
     t0 = time.monotonic()
     tx_dicts = _parse_and_categorize(body.messages)
-    data = compute_report(tx_dicts)
+    data = compute_report(tx_dicts, window_months=body.window_months)
     elapsed = round((time.monotonic() - t0) * 1000, 2)
 
     return ReportResponse(
