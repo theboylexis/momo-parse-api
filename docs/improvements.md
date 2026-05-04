@@ -1,118 +1,97 @@
-# MomoParse — Improvement Roadmap
+# MomoParse — Roadmap
 
-Full inventory of work to reach (a) a complete lender-facing tool and (b) a publishable research paper. Each item is tagged:
+Inventory of follow-up work for the build, organized by area. Items are tagged:
 
 - **Solidify** — label, expose, or harden work that already exists. Lowest risk, highest leverage.
 - **Gap** — table-stakes piece that's missing.
-- **New scope** — real additional surface area; requires an explicit decision.
+- **New scope** — additional surface area; requires an explicit decision.
 
-Companion docs: [ml_benchmark.md](ml_benchmark.md), [research_paper_structure.md](research_paper_structure.md).
+This list reflects the project's current framing as a portfolio artifact. Items chosen for ongoing technical care, not commercial deadlines.
 
 ---
 
-## A. Core pipeline — what a lender needs to actually use it
+## Recently shipped
+
+- **`score_drivers`** — sub-score decomposition on every MFH score (commit `08b268b`)
+- **MFH weight sensitivity analysis** — ±0.10 perturbation study, [sensitivity_analysis.md](sensitivity_analysis.md)
+- **Calibrated score bands** — Poor / Fair / Good / Strong with published thresholds (commit `5c0fc2e`)
+- **Rolling 6-month scoring window** — FICO/M-Shwari convention, comparable across users (commit `5c0fc2e`)
+- **Template Drift Benchmark** — 209-case named benchmark, [drift_benchmark.md](drift_benchmark.md)
+- **Data minimization audit** — per-pathway verification, [data_minimization.md](data_minimization.md)
+- **ML evaluation harness** — `scripts/evaluate.py`, baselines + CV + held-out test, [ml_evaluation.md](ml_evaluation.md)
+- **Real-data validation** — pipeline run against a consented 2,724-message export; surfaced four real-data parser bugs that synthetic fixtures missed
+- **Hand-labeling workflow** — stratified sampling + scorer + per-class report, [hand_labeling_guide.md](hand_labeling_guide.md)
+- **Drift telemetry** — structured `parse.fuzzy_fallback` log events with 16-char SMS hash for correlation
+
+---
+
+## A. Core pipeline
 
 | # | Item | Tag | Location |
 |---|---|---|---|
-| 1 | Reason codes / `score_drivers` on every score | Solidify | [enricher/analytics.py](../enricher/analytics.py), [api/routes/report.py](../api/routes/report.py) |
-| 2 | Fix report vs. profile asymmetry — both should emit `risk_signals` + drivers + structured `data_confidence` | Solidify | [enricher/analytics.py](../enricher/analytics.py) |
-| 3 | Make `data_confidence` structured: `{level, reasons[]}` not a bare string | Solidify | [enricher/analytics.py](../enricher/analytics.py) |
-| 4 | Unify income/expense classification — single source, not `_INCOME_CATEGORIES` + `_INCOME_TX_TYPES` fallback | Solidify | [enricher/analytics.py:28-65](../enricher/analytics.py#L28-L65) |
-| 5 | Telemetry correlation — link `parse.fuzzy_fallback` events to `request_id` | Solidify | [parser/telemetry.py](../parser/telemetry.py), [api/routes/report.py](../api/routes/report.py) |
+| 1 | Fix report vs. profile asymmetry — both should emit `risk_signals` + drivers + structured `data_confidence` | Solidify | [enricher/analytics.py](../enricher/analytics.py) |
+| 2 | Make `data_confidence` structured: `{level, reasons[]}` not a bare string | Solidify | [enricher/analytics.py](../enricher/analytics.py) |
+| 3 | Unify income/expense classification — single source, not `_INCOME_CATEGORIES` + `_INCOME_TX_TYPES` fallback | Solidify | [enricher/analytics.py:28-65](../enricher/analytics.py#L28-L65) |
+| 4 | Telemetry correlation — link `parse.fuzzy_fallback` events to `request_id` | Solidify | [parser/telemetry.py](../parser/telemetry.py), [api/routes/report.py](../api/routes/report.py) |
 
-## B. Financial indexes — the core research artifact
-
-| # | Item | Tag |
-|---|---|---|
-| 6 | Sensitivity analysis on MFH weights (±0.1 perturbation study) | Solidify (paper-critical) |
-| 7 | Loan Repayment Punctuality index (6th sub-score) | New scope |
-| 8 | Income Regularity index (salary-pattern detection over months) | New scope |
-| 9 | Score band calibration — map 0–100 to labeled bands with documented thresholds | Gap |
-
-## C. Parser — already strong, some loose ends
+## B. Parser
 
 | # | Item | Tag |
 |---|---|---|
-| 10 | Template coverage gaps: reversals, bill payment, international remittance | Gap |
-| 11 | Sender ID as hard filter when present (currently only a signal) | Solidify |
-| 12 | Batch deduplication on SMS hash | Solidify |
-| 13 | Currency normalization (GHS / GH¢ / variants in one helper) | Solidify |
-| 14 | Publish the 131-case drift harness as a named benchmark | Solidify (paper-critical) |
+| 5 | Template coverage gaps: reversals, international remittance | Gap |
+| 6 | Sender ID as hard filter when present (currently only a signal) | Solidify |
+| 7 | Batch deduplication on SMS hash | Solidify |
+| 8 | Currency normalization (GHS / GH¢ / variants in one helper) | Solidify |
 
-## D. ML categorizer — mostly captured in [ml_benchmark.md](ml_benchmark.md) roadmap
-
-| # | Item | Tag | Status |
-|---|---|---|---|
-| 15 | Expand labeled corpus to 1000+, 50+ per category | Gap (paper-critical) | **Blocked** — waiting on real SMS samples |
-| 16 | Held-out test set + stratified 5-fold CV | Solidify (paper-critical) | Blocked on #15 |
-| 17 | Baseline benchmarks: Logistic Regression, Naive Bayes | Solidify (paper-critical) | Blocked on #15 |
-| 18 | Per-category confusion matrix + precision/recall | Solidify (paper-critical) | Blocked on #15 |
-| 19 | Confidence calibration (Platt / isotonic) on `predict_proba` | Solidify | Partially blocked on #15 |
-| 20 | Inter-annotator agreement (κ) on a labeled subset | Gap (paper-critical) | Blocked on #15 + second annotator |
-
-## E. API surface — lender-facing polish
+## C. ML categorizer
 
 | # | Item | Tag |
 |---|---|---|
-| 21 | `/v1/score` lightweight endpoint — composite + drivers only | New scope |
-| 22 | Consent receipts — signed JWT per request with `sms_hash + purpose + timestamp` | New scope |
-| 23 | Webhook HMAC signing | Gap |
-| 24 | Rate-limit headers on every response | Solidify |
-| 25 | API versioning statement in docs (what `/v1` guarantees) | Gap |
+| 9 | Retrain on the expanded 2,073-row real corpus (model currently trained on 994 real + 6,200 synthetic) | Solidify |
+| 10 | Run the hand-labeling workflow on a stratified 150-row sample for an honest accuracy number | Solidify |
+| 11 | Confidence calibration (Platt / isotonic) on `predict_proba` | Solidify |
+| 12 | Loan Repayment Punctuality sub-index | New scope |
+| 13 | Income Regularity sub-index (salary-pattern detection over months) | New scope |
 
-## F. Production readiness
-
-| # | Item | Tag |
-|---|---|---|
-| 26 | Structured logs + metrics (parse success rate, fuzzy fallback rate, p50/p95 latency) | Gap |
-| 27 | Error tracking (Sentry or equivalent) | Gap |
-| 28 | Load test on `/v1/report` | Gap |
-| 29 | API keys hashed in DB, not plaintext | Gap |
-| 30 | Audit log — request_id, key hash, endpoint, outcome | Gap |
-| 31 | sqlite → Postgres migration path | New scope |
-
-## G. Developer experience
+## D. API surface
 
 | # | Item | Tag |
 |---|---|---|
-| 32 | OpenAPI examples on every endpoint | Solidify |
-| 33 | `CHANGELOG.md` | Gap |
-| 34 | SDK docs expansion | Solidify |
-| 35 | Postman / Bruno collection | Gap |
+| 14 | `/v1/score` lightweight endpoint — composite + drivers only | New scope |
+| 15 | Webhook HMAC signing | Gap |
+| 16 | Rate-limit headers on every response | Solidify |
+| 17 | API versioning statement in docs (what `/v1` guarantees) | Gap |
 
-## H. Data & ethics (paper-critical)
+## E. Production readiness
 
-| # | Item | Tag | Status |
-|---|---|---|---|
-| 36 | Expand beyond single-corpus bias (5+ real users) | Gap | Blocked on data |
-| 37 | IRB / ethics review (KNUST process) | Gap | Needed before real-user data |
-| 38 | Data minimization evidence — audit that raw SMS is never persisted | Solidify | Unblocked |
-| 39 | Anonymized dataset release under research license | Gap | Partially blocked on #36 |
-| 40 | Seeded RNG, pinned deps, Docker image for reproducibility | Solidify | Unblocked |
+| # | Item | Tag |
+|---|---|---|
+| 18 | Structured logs + metrics (parse success rate, fuzzy fallback rate, p50/p95 latency) | Gap |
+| 19 | Load test on `/v1/report` | Gap |
+| 20 | API keys hashed in DB, not plaintext | Gap |
+| 21 | Audit log — request_id, key hash, endpoint, outcome | Gap |
+| 22 | Add TTL to `JobRecord.result` and `CounterpartyProfile` (open gaps from [data_minimization.md](data_minimization.md)) | Gap |
 
-## I. Paper sections still to write ([research_paper_structure.md](research_paper_structure.md))
+## F. Developer experience
 
-| # | Item |
-|---|---|
-| 41 | Finish Related Work — technical comparison with Pngme, Mono, Okra |
-| 42 | Finish Discussion — what MomoParse cannot capture vs. a full CRB |
-| 43 | Threats to validity — construct, external, statistical |
-| 44 | Ethical considerations — consent, minimization, adverse-action fairness |
-| 45 | Novelty statement — one paragraph vs. Björkegren & Grissen (2018) et al. |
-| 46 | Appendix with full regex template list |
+| # | Item | Tag |
+|---|---|---|
+| 23 | OpenAPI examples on every endpoint | Solidify |
+| 24 | `CHANGELOG.md` | Gap |
+| 25 | Postman / Bruno collection | Gap |
+| 26 | Docker image for reproducibility | Solidify |
+| 27 | Publish v0.2.0 to PyPI (currently pinned to v0.1.0; `main` runs ahead) | Gap |
 
 ---
 
 ## Top 5 to do next
 
-Picked for maximum combined leverage on both the **complete tool** and **paper-ready** bars. Originally five; the ones depending on an expanded corpus (#15–20, #36) are blocked until more real SMS samples arrive.
+Picked for portfolio polish — visible improvements that show ongoing technical care without committing to commercial or academic milestones.
 
-**Adjusted top 5 — actionable now:**
+1. **#9 Retrain the categorizer on the 2,073-row corpus.** The model is still on the 994-row state; retraining and republishing the [ml_evaluation.md](ml_evaluation.md) numbers closes the asymmetry between corpus state and model state. Single command (`python -m categorizer.train` then `python scripts/evaluate.py --write-md`).
+2. **#10 Run the hand-labeling workflow.** Workflow + scripts are already built; running it on a stratified 150-row sample produces an honest agreement number that breaks the rule-derived-label loop.
+3. **#27 Publish v0.2.0 to PyPI.** Closes the README's "PyPI lags `main`" disclaimer. Workflow exists at `.github/workflows/publish.yml` — needs a tagged release.
+4. **#23 OpenAPI examples on every endpoint.** Each endpoint should ship a request + response example so the auto-generated `/docs` page reads as polished, not bare. Pure Pydantic config work.
+5. **#20 + #21 Hashed API keys + audit log.** Small lift, large credibility — anyone reviewing the repo for production sensibility checks for these two.
 
-1. **#1 `score_drivers` (MVP first)** — expose sub-score decomposition on every MFH score. Unlocks lender conversation, gives the paper an interpretability contribution. Spec in chat history.
-2. **#6 Sensitivity analysis on MFH weights** — one script, high paper value. Shows the weighting choice is robust to perturbation.
-3. **#14 Publish the drift harness as a named benchmark** — the novel engineering work is already built; only the writeup remains. Creates a concrete paper contribution.
-4. **#38 Data minimization audit + evidence** — verify in code that raw SMS never persists; document in README + paper. Unblocks the ethics section.
-5. **ML evaluation scaffolding (prep for #16–18)** — build the harness now so the moment corpus lands, `python scripts/evaluate.py` produces stratified split, CV scores, confusion matrix, and baseline comparisons. Not blocked by data; makes the data unblock instant.
-
-When corpus arrives: #15 → run #16–18 via the scaffolding built in step 5 → #20 (find a second annotator).
+Beyond the top-5, items #12 (Loan Repayment Punctuality) and #13 (Income Regularity) are the two largest "new scope" wins — closing them takes MFH from 5 to 7 of the 8 standard alt-credit signals.

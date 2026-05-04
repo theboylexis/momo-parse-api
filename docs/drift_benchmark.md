@@ -102,7 +102,7 @@ To re-create the exact benchmark results reported in a given paper version, chec
 1. **Curated, not generative.** The mutation set is fixed, modelled on observed telco drift. It does not cover every conceivable format change; it covers the ones we have reason to believe occur in production.
 2. **Not a fuzzer.** Character-level noise and adversarial SMS are out of scope. This is a drift benchmark, not a robustness-to-noise benchmark.
 3. **Ghana-specific.** The mutation catalogue is drawn from MTN and Telecel SMS formats. Telcos in other jurisdictions may exhibit different drift patterns.
-4. **Does not test the ML categorizer.** The benchmark stops at `tx_type`; whether a correctly-extracted transaction gets correctly categorized is a separate concern evaluated in [ml_benchmark.md](ml_benchmark.md).
+4. **Does not test the ML categorizer.** The benchmark stops at `tx_type`; whether a correctly-extracted transaction gets correctly categorized is a separate concern evaluated in [ml_evaluation.md](ml_evaluation.md).
 5. **No per-mutation severity weighting.** All mutations are treated equally; in practice some (truncation, promo injection) are more common than others. Real-world drift rates would need production telemetry to calibrate.
 
 ---
@@ -113,9 +113,3 @@ To re-create the exact benchmark results reported in a given paper version, chec
 - **Automated mutation discovery.** Mine the `parse.fuzzy_fallback` telemetry stream in production to surface drift patterns the benchmark does not yet cover, then formalize them into new `_MUTATIONS` entries.
 - **Severity weighting from production frequencies.** Weight each mutation by its observed rate in production, so the overall pass rate reflects real user exposure.
 - **Cross-parser comparison.** Package the benchmark as an importable artifact so other MoMo-SMS parsers (open source and commercial) can be evaluated on the same mutation set.
-
----
-
-## Paper framing (section 7 — Validation)
-
-> We introduce a deterministic drift benchmark that subjects every telco-registered template to seven curated mutations modelling observed format-drift patterns: verb substitution, currency-symbol drift, field reordering, whitespace bloat, SMS truncation, label abbreviation, and promo injection. The benchmark asserts that parser output preserves the fields consumed by downstream credit scoring (`amount`, `tx_type`, `telco`, `balance`) under every applicable mutation. At the time of writing, the benchmark comprises 209 test cases across 26 amount-bearing templates and passes in full. The benchmark is parametrized over the template configuration directory, so the case count grows automatically as new templates are registered, and over the mutation catalogue, so new drift patterns can be added without modifying test logic. This is, to our knowledge, the first published drift benchmark specifically targeting regex-based mobile-money SMS parsers — a class of system whose silent-failure mode (format drift producing silent drops rather than loud errors) has been qualitatively acknowledged in the alt-credit-scoring literature but not systematically measured.

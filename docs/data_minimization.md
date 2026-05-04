@@ -1,6 +1,6 @@
 # Data Minimization Audit
 
-MomoParse's privacy story rests on a specific, auditable claim: **raw SMS text is never persisted to durable storage.** This document traces every pathway raw SMS takes through the system, names the durable stores, and honestly records both what is *not* retained and what *is*. Written for the paper's ethical considerations section and as evidence a licensed lender or regulator can evaluate directly against the code.
+MomoParse's privacy story rests on a specific, auditable claim: **raw SMS text is never persisted to durable storage.** This document traces every pathway raw SMS takes through the system, names the durable stores, and honestly records both what is *not* retained and what *is*.
 
 Last audited: 2026-04-22. Re-run this audit whenever a persistence layer is added or the parse path changes.
 
@@ -94,7 +94,7 @@ Two categories of derived data persist beyond the request lifetime. Neither is r
 - **User isolation:** **none.** The store is global across API consumers. If user A transacts with a merchant and user B transacts with the same merchant, both contribute to the same `CounterpartyProfile` row.
 - **Retention:** indefinite. There is no current TTL or deletion mechanism.
 
-**Paper-honest framing:** "MomoParse retains counterparty identifiers (phone numbers or names, never full SMS text) in a global categorizer-improvement store, with per-category transaction-count histograms. This is a derivation of user data, not raw input, but it is identifying and persistent — disclosed to API consumers and subject to revision under a future data-subject-rights interface."
+**How to disclose:** MomoParse retains counterparty identifiers (phone numbers or names, never full SMS text) in a global categorizer-improvement store, with per-category transaction-count histograms. This is a derivation of user data, not raw input, but it is identifying and persistent — should be disclosed to API consumers and subject to revision under a future data-subject-rights interface.
 
 ### 2. Analytics payloads in `JobRecord.result`
 
@@ -103,7 +103,7 @@ Two categories of derived data persist beyond the request lifetime. Neither is r
 - **Why:** async job semantics require the result to outlive the triggering request so polling works.
 - **Retention:** indefinite (no TTL currently implemented).
 
-**Paper-honest framing:** "Completed async job results persist in the jobs table so callers can poll. Results contain derived aggregates (not raw SMS), and for profile endpoints include identifier-level counterparty lists. A TTL on job results is a known compliance gap."
+**How to disclose:** Completed async job results persist in the jobs table so callers can poll. Results contain derived aggregates (not raw SMS), and for profile endpoints include identifier-level counterparty lists. A TTL on job results is a known compliance gap.
 
 ---
 
@@ -126,12 +126,4 @@ Two categories of derived data persist beyond the request lifetime. Neither is r
 
 ---
 
-## Paper framing (section to add — Ethical Considerations)
-
-> **Data minimization.** MomoParse does not persist raw SMS text. We audited every entry point (five public endpoints) and every storage mechanism (two database tables, disk files, structured logs, webhook delivery) and confirmed that raw SMS is used transiently during request handling and is discarded once structured fields are extracted. The one exception is a sixteen-character SHA-256 prefix emitted with drift-telemetry events for correlation — insufficient to reconstruct content. This reflects a design choice consistent with Ghana's Data Protection Act 2012 principle of minimization and with the "user-owned" framing: the user's SMS remains on the user's device; MomoParse receives it, extracts structured fields, and forgets the original text.
->
-> Two derivations of user data do persist beyond request lifetime: a counterparty intelligence store that aggregates per-counterparty category histograms across API consumers to improve categorization accuracy, and completed async job results held for polling. Both are derived (not raw) data, but we disclose them explicitly: neither has a current TTL, the counterparty store is not user-isolated, and no data-subject-rights endpoint is currently exposed. These are known gaps, flagged here rather than elided. Future work includes adding configurable retention windows, user-scoped counterparty stores, and DSR endpoints before any production deployment with real user data.
-
----
-
-**Audit hash:** this document reflects the repository state at commit — regenerate whenever persistence or logging behaviour changes.
+This document reflects the repository state at the time of the last audit — regenerate whenever persistence or logging behaviour changes.

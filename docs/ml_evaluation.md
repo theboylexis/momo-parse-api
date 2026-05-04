@@ -2,6 +2,10 @@
 
 Deterministic evaluation harness for the transaction categorizer. Seed = 42. Stratified 20/80 train/test split; 5-fold stratified cross-validation on the training portion; baselines compared on the same splits.
 
+## Why RandomForest
+
+Chosen for the production model after benchmarking against Logistic Regression, Multinomial Naive Bayes, and a majority-class baseline on the same stratified splits and the same 31-feature vector. RF was selected at an earlier corpus state (406 labeled samples) for its tolerance of small-N + high-class-imbalance regimes, interpretable feature importances, and lack of hyperparameter sensitivity. At 7,194 samples it ties LogisticRegression in F1 and is retained for continuity and feature-importance interpretability rather than raw accuracy. MultinomialNB scores ~10 points lower on macro F1, which is the floor evidence that the feature representation carries non-trivial structure.
+
 ## Dataset
 
 - Samples: **7194**

@@ -1,15 +1,80 @@
 # MomoParse — Build Log
 
-A running, plain-language record of every non-trivial change. Each entry is written so you can re-read it after time away and re-explain what the system does — for the paper, for a pitch, or for your own maintenance.
+A running, plain-language record of every non-trivial change. Each entry is written so you can re-read it after time away and re-explain what the system does.
 
 Entries are **reverse chronological** (newest first). Each entry follows:
 
 - **What changed** — files + one-line summary
-- **Why it matters** — the paper/pitch framing
+- **Why it matters** — what the change unlocks or hardens
 - **How it works** — the mechanism in plain terms
 - **How to verify** — the test or command that proves it
 
-Companion docs: [improvements.md](improvements.md), [research_paper_structure.md](research_paper_structure.md), [ml_benchmark.md](ml_benchmark.md).
+Companion docs: [improvements.md](improvements.md), [ml_evaluation.md](ml_evaluation.md).
+
+---
+
+## 2026-05-04 — Repo reframe for portfolio framing
+
+**What changed**
+- **Deleted** `docs/research_paper_structure.md` and `docs/ml_benchmark.md`. The research-paper outline served the paper-completion arc that's no longer the active framing; the ML benchmark doc described a 406-sample corpus state that's been superseded by the 7,194-sample numbers in [ml_evaluation.md](ml_evaluation.md).
+- **Added** a one-paragraph "Why RandomForest" preface at the top of [ml_evaluation.md](ml_evaluation.md) so the model-selection rationale is preserved (just not in its own doc).
+- **Rewrote** [docs/improvements.md](improvements.md) as a portfolio-shaped roadmap. Dropped the "paper-critical" tags, the section on data ethics / IRB, the section on outstanding paper sections, and the 5-item Top-5 that mixed academic and commercial milestones. New Top-5 is purely portfolio polish: retrain on the expanded corpus, run the hand-labeling workflow, publish v0.2.0 to PyPI, OpenAPI examples, hashed keys + audit log.
+- **Trimmed** "Paper framing" sections from [drift_benchmark.md](drift_benchmark.md) and [data_minimization.md](data_minimization.md). The technical content stays; the "section 7 of the paper" framing comes off.
+- **Updated** [README.md](../README.md): inlined the 6-of-8 telco-signal mapping table directly under that paragraph (it used to link to the deleted research_paper_structure.md); updated the Docs list to remove the two deleted entries; rewrote one-line descriptions to drop paper framing.
+- **Updated** this build log's preamble — removed the "for the paper" line and the dead links to deleted docs.
+
+**Why it matters**
+
+The repo has been carrying three different framings simultaneously: research paper (with citations, novelty statements, IRB), commercial product (with lender pilots, predictive validity, regulatory positioning), and portfolio piece. The docs reflected all three, which made the project look like it didn't know what it was. A reader (recruiter, lecturer, peer reviewer) skimming the docs would see "improvements roadmap items 41–46: Paper sections still to write" right next to "production hardening: API key hashing" and reasonably wonder which arc the project is actually on.
+
+For a portfolio piece, the right framing is: a self-contained engineering artifact that demonstrates judgment and depth — not a project chasing a venue or a customer. Everything that was paper-only (related work, novelty, threats to validity, IRB sequencing, multi-annotator κ) becomes dead weight. Everything that was commercial-only (lender backtests, regulatory positioning beyond the existing data-minimization audit, a pricing model) likewise drops out. What remains is the engineering: parser, drift benchmark, ML evaluation, score formula + sensitivity analysis, deployed API, real-data validation. That's the showcase.
+
+The rewritten improvements.md surfaces the genuinely-portfolio-shaped follow-ups (retrain, OpenAPI examples, PyPI publish, audit log) while leaving the optional new-scope items (Loan Repayment Punctuality, Income Regularity sub-indexes) as available extensions, not commitments.
+
+**How to verify**
+
+```bash
+# Deleted files no longer exist
+ls docs/research_paper_structure.md docs/ml_benchmark.md 2>&1 | grep -i "no such"
+
+# No remaining links to deleted docs
+grep -rn "research_paper_structure\|ml_benchmark" --include="*.md" . | grep -v .venv
+
+# All docs still listed in README exist
+for f in build_log drift_benchmark sensitivity_analysis data_minimization ml_evaluation hand_labeling_guide improvements; do
+    test -f "docs/$f.md" && echo "ok: docs/$f.md" || echo "MISSING: docs/$f.md"
+done
+```
+
+---
+
+## 2026-05-01 — Documentation polish pass for external review
+
+**What changed**
+- [README.md](../README.md) — corrected the parser/categorizer architecture diagram from "33 regex templates (11 MTN, 22 Telecel)" to **34 (12 MTN, 22 Telecel)** to match `configs/`; corrected the categorizer corpus breakdown from "2,073 real + synthetic" to **994 real + 6,200 synthetic = 7,194** (the actual training corpus); replaced the 9-row truncated tx_type table with the full **16 distinct slugs** and an explicit MTN-vs-Telecel column noting the `cash_out` / `cash_withdrawal` naming asymmetry; bumped test count "6,500+ → 8,600+"; fixed the `parser/configs/` path to `configs/`; added a one-line note that PyPI lags `main` so users wanting the full pipeline use the git path; turned the unsourced "6 of 8 telco signals" claim into a link to the mapping table in `docs/research_paper_structure.md`. Added a one-line note that the real corpus has grown to 2,073 rows and a model retrain is the natural follow-up.
+- `docs/research_paper_structure.md` — updated parser layer from "23 regex templates" to "34 (12 MTN, 22 Telecel) covering 16 distinct tx_type slugs"; corrected feature count from "44" to "31" (matches `categorizer.features.FEATURE_NAMES`); updated training-section sample size from "406" to "7,194 labeled (994 real + 6,200 synthetic)"; rewrote the Validation section to reflect actual current state (8,600+ tests, 209-case drift benchmark, sensitivity analysis, real-data pipeline run); rewrote Future Work to drop already-shipped items. *(File deleted in the 2026-05-04 portfolio reframe — see entry above.)*
+- `docs/ml_benchmark.md` — added a top-of-file historical-status banner clarifying that the 406-sample numbers reflect the model-selection rationale at an earlier corpus size; renamed "Current Performance" to "Performance at 406-sample corpus state" to reinforce the temporal scope. *(File deleted in the 2026-05-04 portfolio reframe — see entry above.)*
+- [docs/improvements.md](improvements.md) — added a **Status** column to tables A and B; marked items #1 (score_drivers), #6 (sensitivity analysis), #9 (score band calibration), #14 (drift benchmark), #38 (data minimization audit) as **Done** with commit / doc references; rewrote the "Top 5 to do next" section: replaced the now-shipped Apr-2026 list with a **Recently shipped** retrospective and a fresh May-2026 top-5 (IRB submission, predictive-validity backtest with a lender, sub-indexes #7 + #8, Related Work writeup, hashed keys + audit log).
+
+**Why it matters**
+
+A senior engineer (HOD of telecom engineering, intended audience for the next walkthrough) reads numbers carefully. Three different template counts (23 / 26 / 33), two corpus totals (406 / 7,194), and a stale 543-test claim across the docs would be a credibility tax to pay before any technical conversation could start. The polish pass closed every cross-document number mismatch I could find on a full sweep. It also reframed two stale documents that were correct in their day but read as confused alongside the current state — `ml_benchmark.md` now reads as "this is *why* RandomForest, captured at 406 samples" and `ml_evaluation.md` reads as "this is *how the current model performs*, captured at 7,194." Each doc has one coherent story instead of fighting the other.
+
+The Top-5 list in `improvements.md` was the most strategically misleading drift: every item on the previous "actionable now" list has shipped, but the doc still presented them as open. A reader scanning the roadmap would have concluded the project was further behind than it is. The new list reflects what's actually next — IRB, lender backtest, two sub-indexes, Related Work, production hardening — which is also a more honest read of the gap between "demonstrable" and "adoptable."
+
+**How to verify**
+
+```bash
+# Stale numbers fully purged from .md files (should return no hits)
+grep -rn "543 automated\|6,500+ tests\|33 regex\|11 MTN, 22\|9 transaction types\|14 transaction types\|parser/configs/\|2,073 real + synthetic\|131-case" --include="*.md" . | grep -v .venv
+
+# Ground-truth numbers (current state)
+python -c "import json; mtn=json.load(open('configs/mtn_templates.json')); tel=json.load(open('configs/telecel_templates.json')); print('Templates:', len(mtn['templates'])+len(tel['templates']), '(', len(mtn['templates']), 'MTN +', len(tel['templates']), 'Telecel)'); print('Distinct tx_types: MTN', len({t['tx_type'] for t in mtn['templates']}), '/ Telecel', len({t['tx_type'] for t in tel['templates']}))"
+python -c "from categorizer.features import FEATURE_NAMES; print('Features:', len(FEATURE_NAMES))"
+python -m pytest --collect-only -q 2>&1 | tail -1
+```
+
+**Note on the 406 reference at line 230 of this build log:** that entry's snapshot reflects the corpus state on the day it was written. Build log entries are append-only by convention — a re-statement at top-of-file is the right way to surface the current-state numbers, not editing the historical record.
 
 ---
 
