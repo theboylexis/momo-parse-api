@@ -62,14 +62,6 @@ Structured JSON
 
 Real-SMS corpus has since grown to 2,073 rows (956 MTN + 1,117 Telecel) — retraining the model on the expanded corpus is tracked in [docs/improvements.md](docs/improvements.md).
 
-**Pipeline layers:**
-
-| Layer | Method | Purpose |
-|-------|--------|---------|
-| Parser | Rule-based (regex templates) | Extract fields: amount, balance, fee, counterparty, date, tx_id |
-| Categorizer | 3-layer (rules → ML → counterparty learning) | Classify into financial categories |
-| Enricher | Statistical analysis | Compute financial indexes and health score |
-
 ## Financial Health Index (MFH)
 
 A single composite score (0–100) combining five formalized financial indexes:
@@ -106,36 +98,15 @@ Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted ind
 | MTN Mobile Money | 12 | 7 |
 | Telecel Cash | 22 | 13 |
 
-Slugs emitted across both telcos (16 distinct values). MTN's `cash_out` and Telecel's `cash_withdrawal` describe the same operation under each telco's native naming — both are preserved as emitted by the parser:
-
-| Transaction Type | Slug | Telco |
-|---|---|---|
-| Transfer sent | `transfer_sent` | MTN, Telecel |
-| Transfer received | `transfer_received` | MTN, Telecel |
-| Merchant payment | `merchant_payment` | MTN, Telecel |
-| Airtime purchase | `airtime_purchase` | MTN, Telecel |
-| Cash deposit (agent) | `cash_in` | MTN |
-| Cash out (agent) | `cash_out` | MTN |
-| Bill payment | `bill_payment` | MTN |
-| Cash withdrawal (agent) | `cash_withdrawal` | Telecel |
-| Bank transfer | `bank_transfer` | Telecel |
-| Bundle purchase | `bundle_purchase` | Telecel |
-| Airtime received | `airtime_received` | Telecel |
-| Deposit received (cross-bank) | `deposit_received` | Telecel |
-| Payment received | `payment_received` | Telecel |
-| Interest received | `interest_received` | Telecel |
-| Loan repayment | `loan_repayment` | Telecel |
-| Wallet balance check | `wallet_balance` | Telecel |
+16 distinct `tx_type` slugs across both telcos. MTN's `cash_out` and Telecel's `cash_withdrawal` describe the same operation under each telco's native naming — both are preserved as emitted by the parser. Full slug list lives in [`configs/`](configs/).
 
 ## Validation
 
 - **8,658 tests** passing — synthetic corpus + 2,073-row real corpus (956 MTN, 1,117 Telecel, PII hashed at import) + unit/integration tests
-- **[Template Drift Benchmark](docs/drift_benchmark.md)** — 209-case harness applies seven curated telco-drift mutations (verb swap, currency-symbol drift, field reorder, whitespace bloat, SMS truncation, label abbreviation, promo injection) across every registered template and asserts `amount`, `tx_type`, `telco`, and `balance` still recover
-- **[Real-data end-to-end validation](docs/build_log.md)** — pipeline exercised against a consented 2,724-message SMS export; surfaced and fixed four parser-level defects (failed-transaction counting, fuzzy-match hallucination of airtime purchases, duplicate-notification dedup bug, sender whitelist gap) that synthetic fixtures did not expose
-- **[MFH Weight Sensitivity Analysis](docs/sensitivity_analysis.md)** — ±0.10 perturbation of each sub-index weight, with proportional redistribution so Σw = 1 is preserved, shifts the composite score by at most 6.3 points across six canonical user profiles — the 30/25/20/15/10 weighting is robust to moderate disagreement
-- **Fuzzy fallback with product-noun gating** — when no regex matches exactly, a token-overlap + generic field regex path recovers partial data at capped confidence (≤0.6). Fuzzy candidates for product-bearing tx_types (airtime, bundle, loan, interest) are rejected unless the SMS contains the product noun, preventing cross-category contamination
-- **Failed / duplicate-notification filter** — SMS describing failures ("failed to send", "exceeded your daily transaction limit", "has failed at", "expired and has been returned") and low-info duplicate notifications are rejected at the parser stage with `match_mode=none`, preventing phantom transactions from inflating category totals
-- **Drift telemetry** — every fuzzy fallback emits a structured `parse.fuzzy_fallback` JSON log line (`template_id`, `missing_critical_fields`, SHA-256 SMS hash — no raw SMS body) so aggregating a week of production logs surfaces exactly which templates need a revision
+- **[Template Drift Benchmark](docs/drift_benchmark.md)** — 209-case harness applies seven curated telco-drift mutations (verb swap, currency-symbol drift, field reorder, whitespace bloat, truncation, label abbreviation, promo injection) across every registered template and asserts `amount`, `tx_type`, `telco`, and `balance` still recover
+- **[Real-data validation](docs/build_log.md)** — pipeline exercised against a consented 2,724-message SMS export; surfaced and fixed four parser-level defects (failed-transaction counting, fuzzy-match hallucination of airtime purchases, duplicate-notification dedup, sender-whitelist gap) that synthetic fixtures did not expose
+- **[MFH Weight Sensitivity Analysis](docs/sensitivity_analysis.md)** — ±0.10 perturbation of each sub-index weight (with proportional redistribution so Σw = 1) shifts the composite by at most 6.3 points across six canonical user profiles; the 30/25/20/15/10 weighting is robust to moderate disagreement
+- **Parser robustness** — fuzzy fallback (token-overlap path at capped confidence ≤0.6, with product-noun gating to prevent cross-category contamination), failure / duplicate-notification filter (rejects "failed to send," daily-limit, voucher-expired SMS at parser stage), and drift telemetry (structured `parse.fuzzy_fallback` log events with 16-char SHA-256 SMS hash — no raw SMS body)
 - **[Data minimization audit](docs/data_minimization.md)** — every pathway raw SMS takes through the system is traced; no durable store retains it. Known gaps (TTL on job results, counterparty-store user isolation, DSR endpoint) flagged rather than elided
 - Parser covers **~95% of national MoMo transaction volume** by category (per BoG Q1 2025 report)
 
@@ -161,30 +132,12 @@ python examples/basic_parse.py
 ```python
 import parser as p
 
-# Basic parse
-result = p.parse(sms_text)
-
-# With sender ID (improves telco detection)
-result = p.parse(sms_text, sender_id="MobileMoney")
-
-# Access fields
-result.telco          # "mtn" | "telecel" | "unknown"
-result.tx_type        # "transfer_sent" | "cash_withdrawal" | ...
-result.amount         # float or None
-result.balance        # float or None
-result.fee            # float (0.0 if no fee)
-result.counterparty_name   # str or None
-result.counterparty_phone  # str or None
-result.tx_id          # str or None
-result.reference      # str or None
-result.date           # "YYYY-MM-DD" or None
-result.time           # "HH:MM:SS" or None
-result.confidence     # float in [0, 1] — continuous weighted-field score
-result.match_mode     # "exact" | "fuzzy" | "none" — which path produced the result
-
-# Dict output
-result.to_dict()
+result = p.parse(sms_text)                            # auto-detect telco
+result = p.parse(sms_text, sender_id="MobileMoney")   # sender ID improves detection
+result.to_dict()                                      # full field dict
 ```
+
+Fields on `ParseResult`: `telco`, `tx_type`, `amount`, `balance`, `fee`, `counterparty_name`, `counterparty_phone`, `tx_id`, `reference`, `date`, `time`, `confidence`, `match_mode`. Schema with types and examples at [/docs](https://momo-parse.up.railway.app/docs).
 
 ## API
 
