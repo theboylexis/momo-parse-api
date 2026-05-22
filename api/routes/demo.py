@@ -821,8 +821,8 @@ _HTML = """\
       transparent credit intelligence from data they already own.
     </p>
     <div class="stats-row">
-      <div class="stat"><span class="stat-num">33</span><span class="stat-label">SMS templates + fuzzy fallback</span></div>
-      <div class="stat"><span class="stat-num">6,400+</span><span class="stat-label">tests passing</span></div>
+      <div class="stat"><span class="stat-num">34</span><span class="stat-label">SMS templates + fuzzy fallback</span></div>
+      <div class="stat"><span class="stat-num">8,658</span><span class="stat-label">tests passing</span></div>
       <div class="stat"><span class="stat-num">~95%</span><span class="stat-label">MoMo volume covered</span></div>
       <div class="stat"><span class="stat-num">5</span><span class="stat-label">financial indexes</span></div>
     </div>
