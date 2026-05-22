@@ -834,7 +834,7 @@ _HTML = """\
       <div class="pipe-step">
         <div class="pipe-num">01</div>
         <div class="pipe-name">Parse</div>
-        <div class="pipe-desc">Detect telco, match against 33 regex templates (with fuzzy fallback for drifted wording), extract amount, balance, fee, counterparty, date</div>
+        <div class="pipe-desc">Detect telco, match against 34 regex templates (with fuzzy fallback for drifted wording), extract amount, balance, fee, counterparty, date</div>
       </div>
       <div class="pipe-arrow">&rarr;</div>
       <div class="pipe-step">

@@ -27,12 +27,12 @@ What it produces
 
 Why this exists
 ---------------
-The current corpus is small (~406 samples) and will grow as real SMS arrive.
-Having the evaluation wired up before the data arrives means the moment the
-corpus expands, ``python scripts/evaluate.py`` regenerates every number the
-evaluation needs without touching production code. It also pins the baselines
-so growth in corpus size can be attributed to the model improving (not to
-the evaluation protocol changing).
+The corpus is now at 7,194 samples (994 real + 6,200 synthetic) and will keep
+growing as more real SMS arrive. Having the evaluation harness wired up means
+``python scripts/evaluate.py`` regenerates every number the evaluation needs
+whenever the corpus changes, without touching production code. It also pins
+the baselines so growth in corpus size can be attributed to the model
+improving (not to the evaluation protocol changing).
 
 Usage
 -----
