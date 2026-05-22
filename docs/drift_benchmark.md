@@ -18,7 +18,7 @@ Most parser test suites cover only the nominal case — "given this exact SMS, e
 
 Seven mutations, each modelled on an observed telco behaviour. All deterministic, all reversible (the clean SMS is preserved; the mutation is applied in isolation). Random character-level mutations are deliberately excluded — they represent noise, not the real threat surface.
 
-| Mutation | Operational definition | Paper-framed intuition |
+| Mutation | Operational definition | Why this mutation |
 |---|---|---|
 | `verb_swap` | Replace a transaction verb with a synonym not present in any current template (e.g. `sent to → moved to`, `Payment made for → Payment moved for`). | Telcos routinely revise action-verb phrasing between template versions. |
 | `currency_drift` | Replace the `GHS` currency code with the cedi sign `GH¢`. | Inconsistent currency rendering across telcos and over time. |
@@ -93,7 +93,7 @@ python -m pytest tests/test_drift.py --collect-only -q
 - **Self-contained.** Depends only on the public `parser` package and the JSON template configs in `configs/`.
 - **Version-pinned.** The benchmark's behaviour moves with the parser; pinning the `momoparse` package version pins the benchmark.
 
-To re-create the exact benchmark results reported in a given paper version, check out that commit and re-run — no external data, no downloaded fixtures, no network dependencies.
+To re-create the exact benchmark results at a given commit, check out that commit and re-run — no external data, no downloaded fixtures, no network dependencies.
 
 ---
 
@@ -109,7 +109,7 @@ To re-create the exact benchmark results reported in a given paper version, chec
 
 ## Future work
 
-- **Expand telco coverage.** Add MoMo platforms from other jurisdictions (e.g. Safaricom M-Pesa, Airtel Money) to test generalization of the mutation catalogue itself.
+- **Expand telco coverage.** Add MoMo platforms from other jurisdictions (e.g. Safaricom M-Pesa, Airtel Money) to test how well the mutation catalogue covers other telco SMS formats.
 - **Automated mutation discovery.** Mine the `parse.fuzzy_fallback` telemetry stream in production to surface drift patterns the benchmark does not yet cover, then formalize them into new `_MUTATIONS` entries.
 - **Severity weighting from production frequencies.** Weight each mutation by its observed rate in production, so the overall pass rate reflects real user exposure.
 - **Cross-parser comparison.** Package the benchmark as an importable artifact so other MoMo-SMS parsers (open source and commercial) can be evaluated on the same mutation set.

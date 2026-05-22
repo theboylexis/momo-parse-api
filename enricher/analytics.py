@@ -3,16 +3,15 @@ Aggregate analytics computed from a list of parsed+categorized transactions.
 
 Used by both /v1/enrich and /v1/profile.
 
-Financial indexes are grounded in established methodology:
-- Savings Rate: standard personal finance metric (Lusardi & Mitchell, 2014)
-- Transaction Velocity: proxy for economic activity, analogous to CDR frequency
-  used in telco credit scoring (Björkegren & Grissen, 2018)
-- Income Stability Index: coefficient of variation — standard measure of income
-  volatility in labor economics (Gottschalk & Moffitt, 1994)
-- Counterparty Concentration: Herfindahl-Hirschman Index adapted for transaction
-  partners — low concentration signals diversified economic activity
-- Expense Volatility: normalized standard deviation of monthly spending —
-  high volatility correlates with financial stress (Morduch & Schneider, 2017)
+Five formalized financial indexes:
+- Savings Rate: (income − expenses) / income
+- Income Stability: coefficient of variation of monthly income (lower = steadier)
+- Expense Volatility: coefficient of variation of monthly spending (lower = steadier)
+- Counterparty Concentration: Herfindahl-Hirschman Index over transaction partners
+  (lower = more diversified counterparties)
+- Transaction Velocity: transactions per day — a proxy for activity level
+
+See docs/references.md for the literature these indexes draw from.
 """
 from __future__ import annotations
 
@@ -639,8 +638,7 @@ def compute_financial_indexes(
     """
     Compute five formalized financial indexes from parsed transactions.
 
-    Each index maps to a known telco credit scoring signal and is grounded
-    in established financial methodology.
+    Each index maps to a known telco credit scoring signal.
 
     Parameters
     ----------
@@ -688,8 +686,7 @@ def compute_financial_indexes(
     expense_values = list(monthly_expense.values())
 
     # ── 1. Savings Rate (%) ────────────────────────────────────────────────
-    # Standard: (Income - Expenses) / Income × 100
-    # Reference: Lusardi & Mitchell (2014), financial literacy literature
+    # (Income - Expenses) / Income × 100
     savings_rate = (
         round((total_income - total_expenses) / total_income * 100, 2)
         if total_income > 0
@@ -698,7 +695,6 @@ def compute_financial_indexes(
 
     # ── 2. Transaction Velocity (txns/day) ─────────────────────────────────
     # Proxy for economic activity — maps to telco CDR frequency
-    # Reference: Björkegren & Grissen (2018), mobile phone credit scoring
     if dates:
         days = max((max(dates) - min(dates)).days, 1)
         tx_velocity = round(len(windowed) / days, 3)
@@ -707,7 +703,6 @@ def compute_financial_indexes(
 
     # ── 3. Income Stability Index (0–1, lower = more stable) ───────────────
     # Coefficient of variation of monthly income
-    # Reference: Gottschalk & Moffitt (1994), income volatility measurement
     if len(income_values) >= 2 and statistics.mean(income_values) > 0:
         income_stability = round(
             statistics.stdev(income_values) / statistics.mean(income_values), 3
@@ -719,7 +714,6 @@ def compute_financial_indexes(
     # Herfindahl-Hirschman Index: sum of squared market shares
     # 1.0 = all transactions with one counterparty (concentrated)
     # →0 = evenly distributed across many (diversified)
-    # Reference: adapted from antitrust economics (Hirschman, 1964)
     total_cp_amount = sum(cp_amounts.values())
     if total_cp_amount > 0 and len(cp_amounts) > 0:
         hhi = sum(
@@ -732,7 +726,6 @@ def compute_financial_indexes(
     # ── 5. Expense Volatility (0+, lower = more predictable) ───────────────
     # Normalized std deviation of monthly expenses
     # High volatility correlates with financial stress
-    # Reference: Morduch & Schneider (2017), income/expense volatility
     if len(expense_values) >= 2 and statistics.mean(expense_values) > 0:
         expense_volatility = round(
             statistics.stdev(expense_values) / statistics.mean(expense_values), 3
@@ -855,9 +848,9 @@ _SCORE_BANDS: list[tuple[int, int, str, str]] = [
 
 def _score_band(score: int) -> dict[str, Any]:
     """Map a 0-100 composite score to a calibrated band with label +
-    thresholds + plain-language interpretation. Thresholds are published
-    in ``_SCORE_BANDS`` so a lender (or a reviewer) can verify band
-    assignment is a pure lookup on the score, not a black box."""
+    thresholds + plain-language interpretation. Thresholds live in
+    ``_SCORE_BANDS`` so a lender can verify band assignment is a pure
+    lookup on the score, not a black box."""
     for low, high, label, description in _SCORE_BANDS:
         if low <= score <= high:
             return {
@@ -902,7 +895,8 @@ def _compute_health_score(
     Unified MomoParse Financial Health Index (MFH).
 
     A single composite score (0–100) combining five formalized financial
-    indexes, each grounded in established literature.
+    indexes. See ``docs/references.md`` for the literature these indexes
+    draw from.
 
     Unified formula
     ---------------
@@ -944,11 +938,11 @@ def _compute_health_score(
 
     Weights (``_INDEX_WEIGHTS``)
     ----------------------------
-    Savings Rate              30%   Lusardi & Mitchell (2014)
-    Income Stability          25%   Gottschalk & Moffitt (1994)
-    Expense Volatility        20%   Morduch & Schneider (2017)
-    Counterparty Diversity    15%   Hirschman (1964)
-    Transaction Velocity      10%   Björkegren & Grissen (2018)
+    Savings Rate              30%
+    Income Stability          25%
+    Expense Volatility        20%
+    Counterparty Diversity    15%
+    Transaction Velocity      10%
 
     Low-data penalty
     ----------------

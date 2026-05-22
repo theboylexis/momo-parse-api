@@ -76,13 +76,15 @@ A single composite score (0–100) combining five formalized financial indexes:
 
 **H = 100 × Σ wᵢ · x̂ᵢ**
 
-| Index | Formula | Weight | Reference |
-|-------|---------|--------|-----------|
-| Savings Rate | (Income − Expenses) / Income | 30% | Lusardi & Mitchell (2014) |
-| Income Stability | σ(income) / μ(income) | 25% | Gottschalk & Moffitt (1994) |
-| Expense Volatility | σ(expenses) / μ(expenses) | 20% | Morduch & Schneider (2017) |
-| Counterparty Concentration | Σ(shareᵢ²) | 15% | Hirschman (1964) |
-| Transaction Velocity | transactions / days | 10% | Björkegren & Grissen (2018) |
+| Index | Formula | Weight |
+|-------|---------|--------|
+| Savings Rate | (Income − Expenses) / Income | 30% |
+| Income Stability | σ(income) / μ(income) | 25% |
+| Expense Volatility | σ(expenses) / μ(expenses) | 20% |
+| Counterparty Concentration | Σ(shareᵢ²) | 15% |
+| Transaction Velocity | transactions / days | 10% |
+
+See [docs/references.md](docs/references.md) for the literature these indexes draw from.
 
 Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted indexes (where higher = worse) use (1 − x) so higher always means healthier.
 
@@ -130,7 +132,7 @@ Slugs emitted across both telcos (16 distinct values). MTN's `cash_out` and Tele
 - **8,600+ tests** passing — synthetic corpus + 2,073-row real corpus (956 MTN, 1,117 Telecel, PII hashed at import) + unit/integration tests
 - **[Template Drift Benchmark](docs/drift_benchmark.md)** — 209-case harness applies seven curated telco-drift mutations (verb swap, currency-symbol drift, field reorder, whitespace bloat, SMS truncation, label abbreviation, promo injection) across every registered template and asserts `amount`, `tx_type`, `telco`, and `balance` still recover
 - **[Real-data end-to-end validation](docs/build_log.md)** — pipeline exercised against a consented 2,724-message SMS export; surfaced and fixed four parser-level defects (failed-transaction counting, fuzzy-match hallucination of airtime purchases, duplicate-notification dedup bug, sender whitelist gap) that synthetic fixtures did not expose
-- **[MFH Weight Sensitivity Analysis](docs/sensitivity_analysis.md)** — ±0.10 perturbation of each sub-index weight, with proportional redistribution so Σw = 1 is preserved, shifts the composite score by at most 6.3 points across six canonical user profiles — the published 30/25/20/15/10 weighting is robust to moderate disagreement
+- **[MFH Weight Sensitivity Analysis](docs/sensitivity_analysis.md)** — ±0.10 perturbation of each sub-index weight, with proportional redistribution so Σw = 1 is preserved, shifts the composite score by at most 6.3 points across six canonical user profiles — the 30/25/20/15/10 weighting is robust to moderate disagreement
 - **Fuzzy fallback with product-noun gating** — when no regex matches exactly, a token-overlap + generic field regex path recovers partial data at capped confidence (≤0.6). Fuzzy candidates for product-bearing tx_types (airtime, bundle, loan, interest) are rejected unless the SMS contains the product noun, preventing cross-category contamination
 - **Failed / duplicate-notification filter** — SMS describing failures ("failed to send", "exceeded your daily transaction limit", "has failed at", "expired and has been returned") and low-info duplicate notifications are rejected at the parser stage with `match_mode=none`, preventing phantom transactions from inflating category totals
 - **Drift telemetry** — every fuzzy fallback emits a structured `parse.fuzzy_fallback` JSON log line (`template_id`, `missing_critical_fields`, SHA-256 SMS hash — no raw SMS body) so aggregating a week of production logs surfaces exactly which templates need a revision
@@ -210,6 +212,7 @@ curl -X POST https://momo-parse.up.railway.app/v1/parse \
 - [ML Evaluation](docs/ml_evaluation.md) — categorizer state: 7,194-sample dataset, stratified 5-fold CV, baselines, held-out test, confusion matrix; honest section on rule-derived labels
 - [Hand-Labeling Guide](docs/hand_labeling_guide.md) — workflow for human-labeled evaluation that breaks the rule-derived-label loop
 - [Roadmap](docs/improvements.md) — tagged inventory of solidify/gap/new-scope items, with current Top-5 next steps
+- [References](docs/references.md) — the literature the five MFH sub-indexes draw from
 - [Project Board](https://github.com/users/theboylexis/projects/1) — task tracking
 
 ## Contributing

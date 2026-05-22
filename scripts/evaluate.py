@@ -1,11 +1,11 @@
 """
 ML evaluation harness for the MomoParse categorizer.
 
-Runs a full, paper-grade evaluation of the trained categorization model
+Runs a full, reproducible evaluation of the trained categorization model
 against the labeled corpus. Unlike ``categorizer/train.py`` (which fits the
 production model), this script is read-only: it does not write ``model.pkl``
 and does not alter training state. It exists to produce the numbers that go
-into the paper's ML Evaluation section and to give a one-command answer to
+into ``docs/ml_evaluation.md`` and to give a one-command answer to
 "is the categorizer still good?" whenever the corpus grows.
 
 What it produces
@@ -19,19 +19,18 @@ What it produces
 5. Confusion matrix (printed as a table, optionally saved as PNG if
    matplotlib is available).
 6. Baseline comparison — Random Forest vs. Logistic Regression, Multinomial
-   Naive Bayes, and the majority-class baseline. This is the evidence the
-   paper needs that the model beats the trivial baselines by a meaningful
-   margin.
-7. Per-category performance table so the paper can point at specific
-   categories that are strong (utility, salary) vs. weaker (categories with
-   few samples) rather than reporting only a global number.
+   Naive Bayes, and the majority-class baseline. This is the evidence that
+   the model beats the trivial baselines by a meaningful margin.
+7. Per-category performance table so we can point at specific categories
+   that are strong (utility, salary) vs. weaker (categories with few
+   samples) rather than reporting only a global number.
 
 Why this exists
 ---------------
 The current corpus is small (~406 samples) and will grow as real SMS arrive.
 Having the evaluation wired up before the data arrives means the moment the
 corpus expands, ``python scripts/evaluate.py`` regenerates every number the
-paper needs without touching production code. It also pins the baselines
+evaluation needs without touching production code. It also pins the baselines
 so growth in corpus size can be attributed to the model improving (not to
 the evaluation protocol changing).
 
@@ -293,7 +292,7 @@ def _holdout_eval(clf_factory, X, y, *, seed: int) -> dict:
 
 def _real_only_holdout(clf_factory, X, y, source, *, seed: int) -> dict | None:
     """
-    Paper-honest generalization evaluation.
+    Generalization-honest evaluation on a held-out slice of real SMS.
 
     Because ``label_corpus.py`` auto-labels using rules that the feature
     vector in ``categorizer/features.py`` directly encodes, training and
@@ -570,13 +569,13 @@ def run(*, seed: int, confusion_png: bool) -> str:
         "evidence of generalization to a human-labeled ground truth.\n"
     )
     lines.append(
-        "**What a paper-honest evaluation requires.** A sample of real SMS "
-        "(the `real` rows in the corpus are a natural candidate) must be "
-        "hand-labeled by a human annotator blind to the rule system. The "
-        "meaningful generalization metric is the model's agreement with "
-        "human labels, not with auto-generated labels. Inter-annotator "
-        "agreement on that sample would additionally quantify label noise. "
-        "Both are flagged as outstanding items in `docs/improvements.md`.\n"
+        "**What a generalization-honest evaluation requires.** A sample of "
+        "real SMS (the `real` rows in the corpus are a natural candidate) "
+        "must be hand-labeled by a human labeler blind to the rule system. "
+        "The meaningful generalization metric is the model's agreement with "
+        "human labels, not with auto-generated labels. A second labeler "
+        "would additionally quantify label noise. Both are flagged as "
+        "outstanding items in `docs/improvements.md`.\n"
     )
     lines.append(
         "**What this evaluation does tell us.** (1) The labeling rule set is "

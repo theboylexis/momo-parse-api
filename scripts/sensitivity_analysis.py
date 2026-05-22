@@ -7,9 +7,9 @@ their current share, so Σw = 1 is preserved). Recomputes the composite
 score on a set of canonical user profiles that span the sub-score space,
 and reports the largest observed change.
 
-A small worst-case swing is evidence that the published 30/25/20/15/10
-weighting is not fragile to moderate revisions — required for the paper's
-Financial Health Index section (robustness claim).
+A small worst-case swing is evidence the 30/25/20/15/10 weighting is
+not fragile to moderate revisions — the robustness check anyone reviewing
+the index would ask for.
 
 Usage:
     python scripts/sensitivity_analysis.py              # print markdown report
@@ -131,7 +131,7 @@ def run() -> str:
         f"reports the resulting composite score change across "
         f"{len(PROFILES)} canonical user profiles that span the sub-score space.\n"
     )
-    lines.append("## Published weights\n")
+    lines.append("## Weights\n")
     lines.append("| Sub-index | Weight |")
     lines.append("|---|---:|")
     for name, w in _INDEX_WEIGHTS.items():
@@ -170,11 +170,11 @@ def run() -> str:
 
     # Overall summary
     lines.append("## Summary — worst-case swing per weight (across all profiles)\n")
-    lines.append("| Weight | Published w | Max |Δ composite| under ±0.10 |")
+    lines.append("| Weight | w | Max |Δ composite| under ±0.10 |")
     lines.append("|---|---:|---:|")
-    for weight_name, published in _INDEX_WEIGHTS.items():
+    for weight_name, w in _INDEX_WEIGHTS.items():
         lines.append(
-            f"| {weight_name} | {published:.2f} | "
+            f"| {weight_name} | {w:.2f} | "
             f"{max_swing_per_weight[weight_name]:.1f} pp |"
         )
 
@@ -182,9 +182,9 @@ def run() -> str:
     lines.append(
         f"\n**Overall worst case:** a single ±0.10 weight shift moves the "
         f"composite by at most **{overall_max:.1f} points** on any tested "
-        f"profile. The published 30/25/20/15/10 weighting is robust to "
-        f"moderate weight revisions — small disagreements in the exact "
-        f"weight values do not materially change the score.\n"
+        f"profile. The 30/25/20/15/10 weighting is robust to moderate "
+        f"weight revisions — small disagreements in the exact weight "
+        f"values do not materially change the score.\n"
     )
 
     return "\n".join(lines)

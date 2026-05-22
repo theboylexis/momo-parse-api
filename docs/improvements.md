@@ -86,7 +86,7 @@ This list reflects the project's current framing as a portfolio artifact. Items 
 
 ## Top 5 to do next
 
-Picked for portfolio polish — visible improvements that show ongoing technical care without committing to commercial or academic milestones.
+Picked for portfolio polish — visible improvements that show ongoing technical care without committing to commercial milestones.
 
 1. **#9 Retrain the categorizer on the 2,073-row corpus.** The model is still on the 994-row state; retraining and republishing the [ml_evaluation.md](ml_evaluation.md) numbers closes the asymmetry between corpus state and model state. Single command (`python -m categorizer.train` then `python scripts/evaluate.py --write-md`).
 2. **#10 Run the hand-labeling workflow.** Workflow + scripts are already built; running it on a stratified 150-row sample produces an honest agreement number that breaks the rule-derived-label loop.

@@ -110,7 +110,7 @@ Two categories of derived data persist beyond the request lifetime. Neither is r
 ## Known gaps (flagged for follow-up, not silently elided)
 
 1. **No TTL on `JobRecord.result` or `CounterpartyProfile`.** Both persist indefinitely. Data-subject deletion requests cannot be honoured with the current schema. Remedy: add `expires_at` with a configurable default (e.g. 90 days) and a background reaper.
-2. **No user isolation on the counterparty store.** A legitimate design choice for the "data moat," but should be surfaced in the API terms and the paper's ethics section, not assumed invisible.
+2. **No user isolation on the counterparty store.** A legitimate design choice for the "data moat," but should be surfaced in the API terms and the data-handling section of the docs, not assumed invisible.
 3. **`counterparty_profiles.json` on disk in local/non-DB mode.** Exists for dev convenience; should not run in production. Should be gated behind an explicit dev flag.
 4. **No data-subject-rights (DSR) endpoint.** DPA 2012 and BoG guidance expect a mechanism for users to inspect and delete data derived from their activity. Not implemented.
 5. **Exception messages in logs.** `logger.error("Job %s failed: %s", ..., str(exc))` ([enricher/jobs.py:132](../enricher/jobs.py#L132)) could theoretically leak SMS fragments if a parser exception contained them. Currently no known parser exception includes SMS text, but a regression guard test would harden this.

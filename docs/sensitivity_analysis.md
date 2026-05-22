@@ -2,7 +2,7 @@
 
 Perturbs each of the five MFH sub-index weights by ±0.10 (redistributing across the remaining weights to maintain Σw = 1) and reports the resulting composite score change across 6 canonical user profiles that span the sub-score space.
 
-## Published weights
+## Weights
 
 | Sub-index | Weight |
 |---|---:|
@@ -94,7 +94,7 @@ _Near-zero savings, minimal activity_
 
 ## Summary — worst-case swing per weight (across all profiles)
 
-| Weight | Published w | Max |Δ composite| under ±0.10 |
+| Weight | w | Max |Δ composite| under ±0.10 |
 |---|---:|---:|
 | savings_rate | 0.30 | 1.9 pp |
 | income_stability | 0.25 | 3.8 pp |
@@ -102,4 +102,4 @@ _Near-zero savings, minimal activity_
 | counterparty_concentration | 0.15 | 3.1 pp |
 | transaction_velocity | 0.10 | 6.3 pp |
 
-**Overall worst case:** a single ±0.10 weight shift moves the composite by at most **6.3 points** on any tested profile. The published 30/25/20/15/10 weighting is robust to moderate weight revisions — small disagreements in the exact weight values do not materially change the score.
+**Overall worst case:** a single ±0.10 weight shift moves the composite by at most **6.3 points** on any tested profile. The 30/25/20/15/10 weighting is robust to moderate weight revisions — small disagreements in the exact weight values do not materially change the score.

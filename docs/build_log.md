@@ -13,6 +13,52 @@ Companion docs: [improvements.md](improvements.md), [ml_evaluation.md](ml_evalua
 
 ---
 
+## 2026-05-22 — Strip academic voice across docs, docstrings, and emitted strings
+
+**What changed**
+- New [docs/references.md](references.md) — single consolidated References footer holding the five MFH literature citations (Lusardi & Mitchell, Gottschalk & Moffitt, Morduch & Schneider, Hirschman, Björkegren & Grissen). One file, one place, easy to point at.
+- [README.md](../README.md) — dropped the `Reference` column from the MFH table and replaced it with a one-line pointer to `docs/references.md`. Added References to the Docs list. Dropped "published" from the sensitivity-analysis bullet.
+- [api/routes/demo.py:849](../api/routes/demo.py#L849) — pipeline step 03 description was "grounded in academic literature"; now lists the five sub-indexes by name (savings rate, income stability, expense volatility, counterparty concentration, transaction velocity).
+- [api/models.py:231,279](../api/models.py#L231) — `financial_indexes` description on `ProfileResponse` and `ReportResponse` changed from "Formalized financial indexes grounded in established methodology" to "Five formalized financial indexes plus a composite health score." (Visible in Swagger.)
+- [enricher/analytics.py](../enricher/analytics.py) — neutralized the module docstring (no inline citations), the `compute_financial_indexes` and `_score_band` and MFH docstrings (dropped "grounded in established literature," "reviewer," "published"), and the five `# Reference: <citation>` inline comments above each sub-index computation.
+- [docs/build_log.md](build_log.md) — stripped all eight "**Paper framing (section X)**" blockquote sections. Renamed the 2026-04-23 ML eval entry to "(deterministic, reproducible)" and the 2026-04-22 drift entry to "documented as a named engineering artifact." Rewrote the "Why it matters" paragraphs that referenced "the paper" / "reviewers" / "novelty statement" / "academic index."
+- [docs/ml_evaluation.md](ml_evaluation.md) — "paper-honest" → "generalization-honest"; "annotator" → "labeler."
+- [docs/hand_labeling_guide.md](hand_labeling_guide.md) — heading renamed to "Honest Categorizer Accuracy"; "annotator 1 / Cohen's κ" recast as "labeler / inter-rater agreement."
+- [docs/drift_benchmark.md](drift_benchmark.md) — "Paper-framed intuition" column → "Why this mutation"; "given paper version" → "given commit." (`## Future work` heading kept by request.)
+- [docs/data_minimization.md](data_minimization.md), [docs/improvements.md](improvements.md) — minor: "paper's ethics section" → "data-handling section"; dropped "or academic" from the top-5 framing.
+- [docs/sensitivity_analysis.md](sensitivity_analysis.md) + [scripts/sensitivity_analysis.py](../scripts/sensitivity_analysis.py) — "Published weights" → "Weights"; column header "Published w" → "w." Generator and generated doc kept in sync.
+- [scripts/evaluate.py](../scripts/evaluate.py) — "paper-grade" → "reproducible"; "paper's ML Evaluation section" → `docs/ml_evaluation.md`; "paper-honest" → "generalization-honest" in both the docstring and the emitted markdown.
+- [scripts/score_human_labels.py](../scripts/score_human_labels.py) — "paper-grade" → "reproducible per-category"; emitted section heading "## Paper framing" → "## How to cite this number."
+- [categorizer/label_corpus.py:77](../categorizer/label_corpus.py#L77) — comment: "for generalization testing" → "for honest accuracy measurement."
+
+**Why it matters**
+
+MomoParse was carrying paper-arc framing across the codebase even after the 2026-05-04 portfolio reframe. The README hero read as infrastructure, but the moment a reader clicked into `docs/build_log.md` they'd hit eight "**Paper framing (section X)**" blockquotes and conclude it was a paper project that shipped an API along the way. With the Ghana AI Innovation Challenge application going out in 6 weeks (deadline 2026-07-01) — and the application leading with deployed engineering, not published research — every "paper-honest," "reviewer," "novelty statement," and inline citation needed to either move out of the way or be reframed as engineering rigor.
+
+The bar I set: a Bank of Ghana FinTech licensing officer reading the repo should think *"this person built infrastructure I could regulate,"* not *"this person is writing a paper."* The previous state failed that test on docs/build_log.md within one click of the README. After this pass, every surface — README, demo page, Swagger descriptions, build log, ML eval, drift benchmark, sensitivity analysis, hand-labeling guide, evaluation scripts — speaks in engineering voice. The rigor that earns the regulator's read (drift methodology, sensitivity perturbation, rule-derived-label honesty, data-minimization audit) stays visible; it just no longer reads as a manuscript-in-progress.
+
+Citations are not dropped — they're consolidated into [docs/references.md](references.md) so anyone tracing the math back to its source has a single place to look.
+
+**How to verify**
+
+```bash
+# No "paper framing" / "paper-grade" / "paper-honest" anywhere outside historical 2026-05-04 context
+grep -rn "Paper framing\|paper-grade\|paper-honest\|paper-ready" --include="*.md" --include="*.py" . | grep -v .venv
+
+# Citations live only in docs/references.md (Herfindahl-Hirschman as a term is allowed; it's domain vocabulary)
+grep -rn "Lusardi\|Gottschalk\|Moffitt\|Morduch\|Björkegren\|Grissen" --include="*.md" --include="*.py" . | grep -v .venv
+
+# Test suite: same counts as pre-change (no regressions)
+python -m pytest -q
+# Expected: 293 failed (pre-existing corpus-label drift), 6509 passed, 1856 skipped — total 8658
+
+# Live URLs after Railway redeploy on push
+curl -s https://momo-parse.up.railway.app/demo | grep "Compute 5 financial indexes"
+curl -s https://momo-parse.up.railway.app/openapi.json | python -c "import sys, json; d=json.load(sys.stdin); print(d['components']['schemas']['ProfileResponse']['properties']['financial_indexes']['description'])"
+```
+
+---
+
 ## 2026-05-04 — Repo reframe for portfolio framing
 
 **What changed**
@@ -127,10 +173,6 @@ python -m pytest tests/test_report.py::test_scoring_window_defaults_to_6_months 
                  tests/test_report.py::test_report_exposes_score_band_and_window -v
 ```
 
-**Paper framing (section — Scoring methodology)**
-
-> MomoParse's composite health score is computed over a rolling window of the most recent six months of activity, consistent with consumer-credit convention (FICO, M-Shwari, Tala) and making scores directly comparable across users regardless of how much transaction history they provide. Every score is returned alongside its calibrated band — Poor (0–40), Fair (41–60), Good (61–80), Strong (81–100) — with published, documented thresholds and per-band lender-facing interpretations. Band assignment is a pure lookup on the composite, not a separate model, so the entire scoring pipeline from raw SMS to band label is end-to-end auditable. Callers requiring a lifetime view can override the window explicitly, and the response carries the actual date range the score reflects for reviewer verification.
-
 ---
 
 ## 2026-04-23 — End-to-end demo surfaces + fixes four real parser bugs
@@ -193,9 +235,6 @@ Corpus now: **2,073 rows real** (956 MTN + 1,117 Telecel). End-to-end demo numbe
 | Net cash flow | −GHS 1.04M | −GHS 79k |
 | Monthly income (sample) | flat GHS 26,866 | GHS 994–3,822 |
 
-**Paper framing (section — Validation on real data)**
-
-> We exercised the full pipeline (parser → categorizer → enricher → score) end-to-end against a consented 2,724-message SMS export from a third-party user. Doing so surfaced four classes of parser defect invisible on synthetic fixtures: (i) failed and reversed transactions being counted as executed — the pipeline now rejects them at the parser stage via an explicit failure-marker filter; (ii) fuzzy template matching assigning product-bearing tx_types (airtime, bundle) to generic merchant SMS on token-overlap alone — mitigated by requiring a tx-type-specific product noun in the SMS for these templates; (iii) paired duplicate-notification SMS winning the importer's tx_id dedup against the richer record for the same transaction — fixed by classifying the low-info notification as non-transactional at the parser stage; and (iv) a misconfigured sender whitelist that silently excluded an entire telco (Telecel, shortcode T-CASH) from the corpus. Each fix was validated both by the existing drift benchmark (no regressions) and by re-running the end-to-end demo, which moved the user's composite Financial Health Score from 57/100 (an artefact of the above bugs) to 27/100 (an honest reading). The exercise is a concrete instance of the alt-credit-scoring literature's general point — synthetic data does not surface the failure modes that matter for deployment — and gives the paper a reproducible before/after on a single anonymised real-user account.
 
 ---
 
@@ -212,11 +251,11 @@ Corpus now: **2,073 rows real** (956 MTN + 1,117 Telecel). End-to-end demo numbe
 
 Two wins and one honest finding, in the order they happened.
 
-First, **real data matters for the paper.** A categorizer trained only on synthetic template-generated SMS is easy to dismiss as a toy. Getting 903 real MTN messages — from a different user, across ~2.5 years of activity, covering marketing filtering, template drift in the wild, and the messy reality of MoMo confirmations that come in pairs — is the first time the system has been exposed to data it did not generate itself. That is the material difference between "works on my test fixtures" and "works on a phone that existed before this project did."
+First, **real data matters.** A categorizer trained only on synthetic template-generated SMS is easy to dismiss as a toy. Getting 903 real MTN messages — from a different user, across ~2.5 years of activity, covering marketing filtering, template drift in the wild, and the messy reality of MoMo confirmations that come in pairs — is the first time the system has been exposed to data it did not generate itself. That is the material difference between "works on my test fixtures" and "works on a phone that existed before this project did."
 
-Second, **we committed in code to the data-minimization claim** the paper needs. The [data minimization audit](data_minimization.md) written yesterday asserts raw SMS never persists. The importer now enforces the same posture for training data — third-party names and phones are hashed at import time, and existing rows were retroactively updated so the full corpus is consistent. The audit's paper paragraph about "user-owned" data is now defensible in the training-set context too, not just the runtime context.
+Second, **the data-minimization claim is now enforced in code, not just asserted.** The [data minimization audit](data_minimization.md) written yesterday says raw SMS never persists. The importer now enforces the same posture for training data — third-party names and phones are hashed at import time, and existing rows were retroactively updated so the full corpus is consistent. The "user-owned" data claim is now defensible in the training-set context too, not just the runtime context.
 
-Third, **running the new evaluation pipeline surfaced a real methodological issue** and the honest response was to document it, not paper over it. `label_corpus.py::_label()` assigns categories by inspecting `tx_type + keywords on reference/counterparty`; `features.py` one-hot-encodes `tx_type` and flags the same keywords on the same text. Labels and features are therefore near-isomorphic functions of the same raw signals. Any classifier will score near-perfectly — including on a real-only held-out slice — not because it generalizes, but because the task is effectively an identity map between rule-derived labels and rule-derived features. Recognising this in `docs/ml_evaluation.md` and pointing at the existing item #20 in `docs/improvements.md` (human-labeled ground truth + inter-annotator agreement) is the paper-honest next step. It is a known limitation written down, not a claim silently inflated.
+Third, **running the new evaluation pipeline surfaced a real methodological issue** and the honest response was to document it. `label_corpus.py::_label()` assigns categories by inspecting `tx_type + keywords on reference/counterparty`; `features.py` one-hot-encodes `tx_type` and flags the same keywords on the same text. Labels and features are therefore near-isomorphic functions of the same raw signals. Any classifier will score near-perfectly — including on a real-only held-out slice — not because it generalizes, but because the task is effectively an identity map between rule-derived labels and rule-derived features. Recognising this in `docs/ml_evaluation.md` and pointing at the existing item #20 in `docs/improvements.md` (human-labeled ground truth + a second labeler) is the generalization-honest next step. It is a known limitation written down, not a claim silently inflated.
 
 **How it works**
 
@@ -226,7 +265,7 @@ Third, **running the new evaluation pipeline surfaced a real methodological issu
 
 *Provenance tagging.* `label_corpus.py` now iterates over a list of `(path, source)` pairs instead of bare paths, writing the tag into a new `source` column. `scripts/evaluate.py::_load_labeled()` reads the tag; `_real_only_holdout()` stratifies the real rows 80/20, trains on `synthetic + real_train`, and scores on `real_test`.
 
-*Honest limitation write-up.* The evaluation report now has a "Known evaluation limitation" section stating in plain terms that near-perfect F1 is expected under the current labeling scheme, what a paper-honest evaluation would require (human-labeled ground truth + inter-annotator agreement), and what this evaluation does tell us (internal consistency of the labeling rules, operational floor guarantee, and baseline separation on the original 406-sample set).
+*Honest limitation write-up.* The evaluation report now has a "Known evaluation limitation" section stating in plain terms that near-perfect F1 is expected under the current labeling scheme, what a generalization-honest evaluation would require (human-labeled ground truth + a second labeler), and what this evaluation does tell us (internal consistency of the labeling rules, operational floor guarantee, and baseline separation on the original 406-sample set).
 
 **How to verify**
 
@@ -252,25 +291,21 @@ Current snapshot after import (seed 42):
 - Real-only held-out weighted F1: **1.000**.
 - These numbers are flagged in the report as evidence of internal consistency, **not** generalization.
 
-**Paper framing (section — ML Evaluation, honest version)**
-
-> We evaluate the categorizer on a corpus of 7,194 labeled transactions drawn from a consented third-party MTN SMS export (994 rows, PII hashed at import) and a synthetic corpus generated by rule-driven templating (7,600 rows). Stratified 5-fold cross-validation on the full corpus and a held-out slice of real-only SMS both return near-perfect scores for Random Forest and Logistic Regression, and correspondingly elevated scores for Naive Bayes. We report this result as evidence of internal consistency between the rule-derived labels and the feature encoding, rather than as a generalization metric: both labels and features in the present pipeline are deterministic functions of the same raw signals (transaction type, keyword presence in reference and counterparty name fields), so any sufficiently expressive classifier will approximate the rule system with arbitrarily high fidelity. A paper-honest generalization metric requires a hand-labeled ground-truth sample of real SMS and measurement of model–annotator agreement, alongside inter-annotator agreement (κ) to quantify label noise. Both are flagged as outstanding validation items and are the principal entries in our future-work section of the evaluation chapter.
-
 ---
 
-## 2026-04-23 — ML evaluation harness (paper-grade, data-ready)
+## 2026-04-23 — ML evaluation harness (deterministic, reproducible)
 
 **What changed**
 - [scripts/evaluate.py](../scripts/evaluate.py) — new standalone script. Loads the labeled corpus, produces a stratified 80/20 train/test split, runs 5-fold stratified cross-validation, evaluates on a held-out set, and compares the production Random Forest against three baselines (Logistic Regression, Multinomial Naive Bayes, and a majority-class DummyClassifier) on the same splits.
-- [docs/ml_evaluation.md](ml_evaluation.md) — machine-generated report with every number the paper's ML Evaluation section needs: dataset summary, per-class frequency table, CV mean ± std across models, held-out classification report (precision/recall/F1 per class), and confusion matrix. Regenerated by running the script with `--write-md`.
+- [docs/ml_evaluation.md](ml_evaluation.md) — machine-generated report with every number needed to evaluate the categorizer: dataset summary, per-class frequency table, CV mean ± std across models, held-out classification report (precision/recall/F1 per class), and confusion matrix. Regenerated by running the script with `--write-md`.
 
 **Why it matters**
 
-The categorizer previously had CV inside `categorizer/train.py`, but that file also fits and *overwrites* the production model. That coupling makes it unsafe to run casually ("did the numbers change?" shouldn't risk touching `model.pkl`), and the output is a training log, not a paper artifact. Evaluation and training are different jobs.
+The categorizer previously had CV inside `categorizer/train.py`, but that file also fits and *overwrites* the production model. That coupling makes it unsafe to run casually ("did the numbers change?" shouldn't risk touching `model.pkl`), and the output is a training log, not a comparable evaluation snapshot. Evaluation and training are different jobs.
 
 More importantly: the corpus is going to grow. Real SMS samples are the next unblock, and when they arrive the question will be "did the model get better?" — a question you can only answer if you have frozen, reproducible numbers to compare against. This harness is that snapshot. The same script, same seed, same splits, run before and after corpus expansion, gives an apples-to-apples delta. Without it, every improvement is anecdotal.
 
-The baseline comparison is the paper's honest contribution. A 0.98 F1 is meaningless without knowing what the trivial baselines score on the same data. Here, the majority-class baseline hits 0.14 weighted F1 and Naive Bayes hits 0.88 — so the production RF's 0.98 is a real lift, not an artifact of an easy problem. That's the figure reviewers will ask for.
+The baseline comparison is the honest part of the evaluation. A 0.98 F1 is meaningless without knowing what the trivial baselines score on the same data. Here, the majority-class baseline hits 0.14 weighted F1 and Naive Bayes hits 0.88 — so the production RF's 0.98 is a real lift, not an artifact of an easy problem. That's the figure anyone evaluating the model will ask for.
 
 **How it works**
 
@@ -302,10 +337,6 @@ Current snapshot (406 samples, 15 categories, 2 singleton classes excluded):
 
 (Macro F1 is dragged down by `supplier_payment` and `transport`, which have 1 test sample each — a corpus-size story, not a model story.)
 
-**Paper framing (section — ML Evaluation)**
-
-> We evaluate the transaction categorizer on the full labeled corpus using stratified 5-fold cross-validation and a held-out 20% test set. The production Random Forest is compared against three baselines — Logistic Regression, Multinomial Naive Bayes, and a majority-class DummyClassifier — trained on identical feature vectors and identical splits. Cross-validation weighted F1 for the Random Forest is 0.984 ± 0.025, versus 0.883 ± 0.017 for Naive Bayes and 0.139 ± 0.001 for the majority-class baseline, confirming that the learned model captures non-trivial signal from the engineered features (amount buckets, one-hot transaction type, keyword indicators, counterparty presence). Logistic Regression matches the Random Forest's weighted F1 within noise, indicating that the feature space is largely linearly separable at the current corpus size — a finding we will revisit as the corpus grows and non-linear interactions become more likely to dominate. All evaluation runs are deterministic under a fixed seed, and the evaluation harness is read-only with respect to the production model artifact, so reported numbers can be regenerated without risking drift in deployed state.
-
 ---
 
 ## 2026-04-22 — Data minimization audit
@@ -316,11 +347,11 @@ Current snapshot (406 samples, 15 categories, 2 singleton classes excluded):
 
 **Why it matters**
 
-MomoParse's privacy story sits in the middle of the paper's ethical considerations section and the pitch to any licensed lender or regulator: **raw SMS text is never persisted to durable storage.** Claiming it is cheap; proving it requires walking every entry point and every storage mechanism and writing down what you find. Until this document existed, the claim was believable but not checkable — a reviewer couldn't verify it without re-reading the codebase themselves.
+MomoParse's privacy story is the pitch to any licensed lender or regulator: **raw SMS text is never persisted to durable storage.** Claiming it is cheap; proving it requires walking every entry point and every storage mechanism and writing down what you find. Until this document existed, the claim was believable but not checkable — anyone evaluating the codebase couldn't verify it without re-reading the whole thing themselves.
 
 The audit also forces honest disclosure of what *is* retained. Two derivations outlive the request: the global `CounterpartyProfile` histograms (Layer 3 of the categorizer — the "data moat") and the `JobRecord.result` payloads held for async polling. Neither contains raw SMS, but both are identifying and persistent, and neither has a TTL or user-isolation mechanism today. These are real compliance gaps, and writing them down here means they won't quietly disappear into the assumption that "we're fine on privacy."
 
-For the paper, this slots straight into the Ethical Considerations section: minimization is demonstrated rather than asserted, and the known gaps are flagged as future work rather than elided.
+This audit is the document a BoG licensing officer would ask for: minimization is demonstrated rather than asserted, and the known gaps are flagged as roadmap items rather than elided.
 
 **How it works**
 
@@ -346,25 +377,21 @@ grep -n "sha256\|sms_prefix\|sms_text" parser/telemetry.py
 
 The future-work CI test named in the audit — asserting `sms_text` substrings never appear in response JSON, log records, or job result payloads for a representative request through every endpoint — would pin the invariant deterministically.
 
-**Paper framing (Ethical Considerations section)**
-
-> MomoParse does not persist raw SMS text. We audited every entry point (five public endpoints) and every storage mechanism (two database tables, disk files, structured logs, webhook delivery) and confirmed that raw SMS is used transiently during request handling and is discarded once structured fields are extracted. The one trace that leaves the request is a sixteen-character SHA-256 prefix emitted with drift-telemetry events for correlation — insufficient to reconstruct content. This reflects a design choice consistent with Ghana's Data Protection Act 2012 principle of minimization and with the "user-owned" framing: the user's SMS remains on the user's device; MomoParse receives it, extracts structured fields, and forgets the original text. Two derivations of user data do persist beyond request lifetime — a counterparty intelligence store and completed async job results — and are disclosed with their current limitations (no TTL, no user isolation on the counterparty store, no data-subject-rights endpoint) flagged as known gaps rather than elided.
-
 ---
 
-## 2026-04-22 — Template Drift Benchmark published as a named artifact
+## 2026-04-22 — Template Drift Benchmark documented as a named engineering artifact
 
 **What changed**
-- [docs/drift_benchmark.md](drift_benchmark.md) — full writeup of the existing drift harness as a reusable, publishable benchmark: motivation, mutation catalogue with operational definitions, test protocol, pass criteria, reproducibility, limitations, future work, and paper-ready framing.
-- No code changes. The harness itself has lived in [tests/test_drift.py](../tests/test_drift.py) for some time; this entry upgrades it from "internal test file" to "named contribution."
+- [docs/drift_benchmark.md](drift_benchmark.md) — full writeup of the existing drift harness as a reusable benchmark: motivation, mutation catalogue with operational definitions, test protocol, pass criteria, reproducibility, limitations, future work.
+- No code changes. The harness itself has lived in [tests/test_drift.py](../tests/test_drift.py) for some time; this entry upgrades it from "internal test file" to "named engineering artifact."
 
 **Why it matters**
 
-Regex-based SMS parsers are the dominant approach for mobile-money intelligence in places like Ghana because they're auditable, cheap, and don't require server-side model deployment. Their single biggest failure mode — format drift — is widely acknowledged in the alt-credit-scoring literature but has never been systematically measured. Papers mention drift as a limitation; no one has published a benchmark for it.
+Format drift is the central failure mode of regex-based MoMo SMS parsers. Templates that covered 100% of a transaction type yesterday can silently drop 30% of it today after a telco-side template revision — a verb swap, a reordered clause, a swapped currency symbol — and the drop doesn't trigger an error, it just corrupts aggregate indexes downstream. This benchmark turns drift into a measurable, CI-runnable invariant.
 
-The drift harness you already built *is* that benchmark. It takes 26 amount-bearing templates, subjects each to seven curated mutations (verb swap, currency drift, field reorder, whitespace bloat, truncation, label abbreviation, promo injection), and asserts the parser still recovers the fields the Financial Health Index actually consumes. 209 test cases, fully deterministic, parametrized so new templates and new mutations require no test code changes. This is a real engineering contribution — it just wasn't packaged as one.
+The drift harness already in the repo *is* that benchmark. It takes 26 amount-bearing templates, subjects each to seven curated mutations (verb swap, currency drift, field reorder, whitespace bloat, truncation, label abbreviation, promo injection), and asserts the parser still recovers the fields the Financial Health Index actually consumes. 209 test cases, fully deterministic, parametrized so new templates and new mutations require no test code changes.
 
-The writeup makes it citable. Reviewers and future researchers can now reference "the MomoParse Template Drift Benchmark" as a concrete artifact rather than a hand-wavy claim. For the paper, this slots directly into section 7 (Validation) and strengthens the novelty statement in section 4 (Related Work — no equivalent benchmark exists in the literature).
+Promoting it to a named, documented artifact makes it referenceable: future maintainers and integrators can point at "the MomoParse Template Drift Benchmark" as a concrete invariant rather than a hand-wavy claim about robustness.
 
 **How it works**
 
@@ -384,10 +411,6 @@ python -m pytest tests/test_drift.py -v                 # run the benchmark
 python -m pytest tests/test_drift.py --collect-only -q  # count current cases (209)
 ```
 
-**Paper framing (section 7 — Validation, and section 4 — Related Work)**
-
-> We introduce a deterministic drift benchmark that subjects every telco-registered template to seven curated mutations modelling observed format-drift patterns. The benchmark asserts that parser output preserves the fields consumed by downstream credit scoring (amount, tx_type, telco, balance) under every applicable mutation. To our knowledge this is the first published drift benchmark specifically targeting regex-based mobile-money SMS parsers — a class of system whose silent-failure mode has been qualitatively acknowledged in the alt-credit-scoring literature but not systematically measured.
-
 ---
 
 ## 2026-04-22 — Sensitivity analysis on MFH weights
@@ -398,17 +421,17 @@ python -m pytest tests/test_drift.py --collect-only -q  # count current cases (2
 
 **Why it matters**
 
-The published MFH weights (30/25/20/15/10) are grounded in the finance and econometrics literature, but any fixed weighting invites the question: *what if we chose slightly different numbers?* If a 10-percentage-point shift in any single weight materially changed the score, MFH would be fragile — reviewers (and lenders) could legitimately dismiss the composite as arbitrary.
+The MFH weights (30/25/20/15/10) are chosen with reference to standard personal-finance and labor-econ metrics, but any fixed weighting invites the question: *what if we chose slightly different numbers?* If a 10-percentage-point shift in any single weight materially changed the score, MFH would be fragile — lenders (and anyone reviewing the score for adoption) could legitimately dismiss the composite as arbitrary.
 
-The analysis answers that directly. Across six profiles spanning the realistic MoMo user space (high saver, negative saver, volatile trader, salaried, micro-merchant, thin file), a ±0.10 shift in any single weight moves the composite by at most **6.3 points out of 100**. This is the robustness claim the paper's Financial Health Index section needs — MFH is a stable target, not a fragile one.
+The analysis answers that directly. Across six profiles spanning the realistic MoMo user space (high saver, negative saver, volatile trader, salaried, micro-merchant, thin file), a ±0.10 shift in any single weight moves the composite by at most **6.3 points out of 100**. The index needs to be defensible against "you just made the weights up" — this is the answer.
 
-The most sensitive weight is `transaction_velocity` (max 6.3 pp swing on the Volatile Trader profile). Worth flagging because it's also the smallest published weight (0.10), so a ±0.10 perturbation is proportionally the largest — effectively doubling or zeroing the weight. The least sensitive weight is `savings_rate` (max 1.9 pp), which is reassuring because it's also the weight with the strongest literature support.
+The most sensitive weight is `transaction_velocity` (max 6.3 pp swing on the Volatile Trader profile). Worth flagging because it's also the smallest weight (0.10), so a ±0.10 perturbation is proportionally the largest — effectively doubling or zeroing the weight. The least sensitive weight is `savings_rate` (max 1.9 pp), which is reassuring because it's also the weight with the strongest backing in the personal-finance literature.
 
 **How it works**
 
 For each profile, the script:
 
-1. Computes the baseline composite using the published weights.
+1. Computes the baseline composite using the documented weights.
 2. For each of the five weights, produces a perturbed weight set where that weight is shifted by +0.10 (and a second set with −0.10). The remaining four weights are scaled proportionally so the total still sums to 1.0.
 3. Recomputes the composite under each perturbation.
 4. Records `|composite_perturbed − composite_baseline|` as the swing for that (profile, weight, direction) combination.
@@ -425,10 +448,6 @@ python scripts/sensitivity_analysis.py --write-md   # refreshes docs/sensitivity
 
 Current results in [docs/sensitivity_analysis.md](sensitivity_analysis.md). Rerun any time weights change in [enricher/analytics.py](../enricher/analytics.py) `_INDEX_WEIGHTS`.
 
-**Paper framing (section 6 — Financial Health Index)**
-
-> To test robustness of the published weight distribution, we perturb each weight by ±0.10 — redistributing the shift proportionally across the remaining weights so Σw = 1 is preserved — and recompute the composite across six canonical profiles spanning the sub-score space. The maximum observed change is 6.3 points on a 0–100 scale, confirming that MFH is not fragile to moderate disagreements in weight choice. The most sensitive weight is `transaction_velocity` (max ΔH = 6.3), which is expected: at a published weight of 0.10, a ±0.10 perturbation is proportionally the largest of any weight tested.
-
 ---
 
 ## 2026-04-22 — Score drivers (reason codes MVP) on the Financial Health Score
@@ -442,7 +461,7 @@ Current results in [docs/sensitivity_analysis.md](sensitivity_analysis.md). Reru
 
 Before this change, every MFH score was a single opaque number between 0 and 100. A lender looking at "68" had no visibility into whether the user scored that way because their savings are strong but their counterparties are concentrated, or because their income is volatile but their expenses are steady. Those are completely different credit stories, and a lender can't build adverse-action logic on top of a bare number.
 
-Score drivers expose the decomposition that was already being computed internally but never surfaced. The same five indexes that get weighted into the composite are now returned per-request with their normalized value and the points each contributed. This turns MFH from "academic index" into "scorecard" — without adding any new math, ML, or data. For the paper, this is the interpretability contribution.
+Score drivers expose the decomposition that was already being computed internally but never surfaced. The same five indexes that get weighted into the composite are now returned per-request with their normalized value and the points each contributed. This turns MFH from a bare composite number into a scorecard — without adding any new math, ML, or data. This is the interpretability story for any lender adopting the score.
 
 **How it works**
 
@@ -475,9 +494,5 @@ curl -X POST http://localhost:8000/v1/report \
   -H "Content-Type: application/json" \
   -d '{"messages": [{"sms_text": "..."}]}' | jq '.financial_indexes.score_drivers'
 ```
-
-**Paper framing (section 6 — Financial Health Index)**
-
-> Every composite MFH value is accompanied by an additive decomposition into its five constituent sub-scores. Because the composite is a weighted linear sum, attribution is exact by construction — the points each index contributes sum to the composite (up to rounding) when no low-data penalty is applied. This yields interpretable, lender-auditable scoring without post-hoc approximations such as SHAP values that would be required for non-linear models.
 
 ---

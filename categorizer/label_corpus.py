@@ -74,7 +74,7 @@ def _label(tx_type: str, reference: str, counterparty: str, amount: str) -> str:
 
 def run():
     # Per-file provenance tag — propagated to the ``source`` column so the
-    # evaluation harness can hold out real rows for generalization testing.
+    # evaluation harness can hold out real rows for honest accuracy measurement.
     corpus_files: list[tuple[str, str]] = [
         (os.path.join(ROOT, "corpus", "real_sms_corpus.csv"),      "real"),
         (os.path.join(ROOT, "corpus", "synthetic_sms_corpus.csv"), "synthetic"),

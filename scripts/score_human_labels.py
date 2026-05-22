@@ -2,9 +2,10 @@
 Compare human labels to the model's predictions on a hand-labeled sample.
 
 Reads the CSV produced by ``scripts/sample_for_labeling.py`` after
-``human_category`` has been filled in, and produces a paper-grade
-accuracy report: per-class precision / recall / F1, confusion matrix,
-the specific disagreements, and an overall agreement rate.
+``human_category`` has been filled in, and produces a reproducible
+per-category accuracy report: per-class precision / recall / F1,
+confusion matrix, the specific disagreements, and an overall agreement
+rate.
 
 This is the *honest* categorizer accuracy metric — it's the first
 number in the whole pipeline that isn't derived from rule-generated
@@ -196,17 +197,17 @@ def _render_report(
             lines.append(f"\n_(…{len(disagreements) - 40} more disagreements)_")
         lines.append("")
 
-    lines.append("## Paper framing\n")
+    lines.append("## How to cite this number\n")
     lines.append(
         "This is the first categorizer-accuracy number in the pipeline "
-        "that is not derived from rule-generated labels. Human labeling "
-        "was performed by a single annotator (Alex); inter-annotator "
-        "agreement (Cohen's κ) on a held-out slice with a second "
-        "annotator remains outstanding work, flagged as item #20 in "
+        "that is not derived from rule-generated labels. Labeling was "
+        "done by a single person (Alex); a second independent labeler "
+        "would give an inter-rater agreement number — that's future "
+        "work, flagged as item #20 in "
         "[docs/improvements.md](improvements.md). The accuracy here is "
-        "therefore a lower-bound generalization estimate — subject to "
-        "labeler bias — and is honest in a way the auto-labeled "
-        "evaluation in [ml_evaluation.md](ml_evaluation.md) cannot be.\n"
+        "therefore a lower-bound estimate — subject to labeler bias — "
+        "and is honest in a way the auto-labeled evaluation in "
+        "[ml_evaluation.md](ml_evaluation.md) cannot be.\n"
     )
 
     return lines

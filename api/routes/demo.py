@@ -846,7 +846,7 @@ _HTML = """\
       <div class="pipe-step">
         <div class="pipe-num">03</div>
         <div class="pipe-name">Enrich</div>
-        <div class="pipe-desc">Compute 5 financial indexes and a composite health score (0&ndash;100) grounded in academic literature</div>
+        <div class="pipe-desc">Compute 5 financial indexes and a composite health score (0&ndash;100) &mdash; savings rate, income stability, expense volatility, counterparty concentration, transaction velocity</div>
       </div>
     </div>
   </div>

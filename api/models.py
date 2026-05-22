@@ -228,7 +228,7 @@ class ProfileResponse(BaseModel):
     risk_signals: list[RiskSignal] = []
     months_of_data: int = 0
     financial_indexes: Optional[FinancialIndexes] = Field(
-        None, description="Formalized financial indexes grounded in established methodology."
+        None, description="Five formalized financial indexes plus a composite health score."
     )
     summary: Optional[EnrichSummary] = None
 
@@ -276,7 +276,7 @@ class ReportResponse(BaseModel):
     recommendations: list[Recommendation] = []
     financial_health_score: Optional[int] = Field(None, description="0–100 composite score from formalized indexes")
     financial_indexes: Optional[FinancialIndexes] = Field(
-        None, description="Formalized financial indexes grounded in established methodology."
+        None, description="Five formalized financial indexes plus a composite health score."
     )
     data_confidence: Optional[str] = Field(
         None,

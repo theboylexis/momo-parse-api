@@ -1,8 +1,8 @@
-# Hand-Labeling Guide — Human-Label Evaluation
+# Hand-Labeling Guide — Honest Categorizer Accuracy
 
 This is the workflow for producing the first honest categorizer-accuracy number in the pipeline. Every other ML evaluation so far has used rule-generated labels, which means the model scores well by rediscovering the labeling rules that fed the features (see the closed-loop section in [ml_evaluation.md](ml_evaluation.md)). Only human labels break that loop.
 
-You are annotator 1. A second annotator (for Cohen's κ / inter-annotator agreement) is future work — flagged as item #20 in [improvements.md](improvements.md). For the paper's v1, single-annotator accuracy is a meaningful lower-bound number and is honest if presented as such.
+You are the labeler. A second independent labeler would give an inter-rater agreement number; that's future work — flagged as item #20 in [improvements.md](improvements.md). For now, single-labeler accuracy is an honest lower-bound and should be cited as such.
 
 ---
 
@@ -97,13 +97,13 @@ If you find disagreements that look like labeling mistakes on your end, correct 
 
 ## What the number means, honestly
 
-The resulting "agreement rate" is a *single-annotator* accuracy estimate. It is:
+The resulting "agreement rate" is a *single-labeler* accuracy estimate. It is:
 
 - **Lower-bound honest** — if you agreed on X%, that's the floor under how accurate the categorizer is on your interpretation of the taxonomy.
-- **Not inter-annotator agreement** — that requires a second independent labeler and is still outstanding (item #20 in [improvements.md](improvements.md)).
-- **Not a general-population number** — labeler bias (your interpretation of edge cases) directly shapes it. A second annotator from a different background may label some edges differently.
+- **Not inter-rater agreement** — that needs a second independent labeler and is still outstanding (item #20 in [improvements.md](improvements.md)).
+- **Not a general-population number** — labeler bias (your interpretation of edge cases) directly shapes it. A second labeler from a different background may label some edges differently.
 
-For the paper, cite it as "single-annotator agreement on a stratified 150-row real-SMS sample" and flag the κ gap clearly in the limitations section. That framing is defensible.
+Report it as "single-labeler agreement on a stratified 150-row real-SMS sample" and call out the missing second labeler explicitly. That framing is honest.
 
 ---
 
