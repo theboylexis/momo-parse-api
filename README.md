@@ -55,7 +55,7 @@ Parser ─────────── 34 regex templates (12 MTN, 22 Telecel)
   ↓
 ML Categorizer ─── RandomForest, 7,194 labeled samples (994 real + 6,200 synthetic), 15 categories
   ↓
-Financial Indexes ─ 5 formalized indexes → Composite Health Score + per-score drivers
+Financial Indexes ─ 5 sub-scores → Composite Health Score + per-sub-score drivers
   ↓
 Structured JSON
 ```
@@ -64,9 +64,7 @@ Real-SMS corpus has since grown to 2,073 rows (956 MTN + 1,117 Telecel) — retr
 
 ## Financial Health Index (MFH)
 
-A single composite score (0–100) combining five formalized financial indexes:
-
-**H = 100 × Σ wᵢ · x̂ᵢ**
+A single composite score (0–100) combining five sub-scores:
 
 | Index | Formula | Weight |
 |-------|---------|--------|
@@ -76,13 +74,11 @@ A single composite score (0–100) combining five formalized financial indexes:
 | Counterparty Concentration | Σ(shareᵢ²) | 15% |
 | Transaction Velocity | transactions / days | 10% |
 
-See [docs/references.md](docs/references.md) for the literature these indexes draw from.
+Each sub-score is normalized to [0, 1] and combined as a weighted sum × 100. The composite is returned alongside per-sub-score contributions (additive, exact by construction — no SHAP needed) so a lender can see *why* a score landed where it did.
 
-Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted indexes (where higher = worse) use (1 − x) so higher always means healthier.
+**Rolling window (default 6 months).** MFH scores the most recent 6 months of activity relative to the latest dated transaction — same convention as FICO / M-Shwari / Tala, so scores are comparable across users regardless of how much history they provide. Override via `window_months` (1–60) or pass `null` for lifetime scoring.
 
-**Rolling window (default 6 months).** MFH scores the most recent 6 months of activity relative to the latest dated transaction — consistent with FICO / M-Shwari / Tala convention so scores are comparable across users regardless of how much history they provide. Callers can override via `window_months` (1–60 months) or pass `null` for lifetime scoring.
-
-**Calibrated score bands.** Every composite maps to a four-band lender-facing label with published thresholds:
+**Score bands.** Every composite maps to a four-band lender-facing label:
 
 | Band | Range | Interpretation |
 |---|---:|---|
@@ -103,14 +99,11 @@ Each sub-score is min-max normalized to [0, 1] with defined bounds. Inverted ind
 ## Validation
 
 - **8,658 tests** passing — synthetic corpus + 2,073-row real corpus (956 MTN, 1,117 Telecel, PII hashed at import) + unit/integration tests
-- **[Template Drift Benchmark](docs/drift_benchmark.md)** — 209-case harness applies seven curated telco-drift mutations (verb swap, currency-symbol drift, field reorder, whitespace bloat, truncation, label abbreviation, promo injection) across every registered template and asserts `amount`, `tx_type`, `telco`, and `balance` still recover
-- **[Real-data validation](docs/build_log.md)** — pipeline exercised against a consented 2,724-message SMS export; surfaced and fixed four parser-level defects (failed-transaction counting, fuzzy-match hallucination of airtime purchases, duplicate-notification dedup, sender-whitelist gap) that synthetic fixtures did not expose
-- **[MFH Weight Sensitivity Analysis](docs/sensitivity_analysis.md)** — ±0.10 perturbation of each sub-index weight (with proportional redistribution so Σw = 1) shifts the composite by at most 6.3 points across six canonical user profiles; the 30/25/20/15/10 weighting is robust to moderate disagreement
-- **Parser robustness** — fuzzy fallback (token-overlap path at capped confidence ≤0.6, with product-noun gating to prevent cross-category contamination), failure / duplicate-notification filter (rejects "failed to send," daily-limit, voucher-expired SMS at parser stage), and drift telemetry (structured `parse.fuzzy_fallback` log events with 16-char SHA-256 SMS hash — no raw SMS body)
-- **[Data minimization audit](docs/data_minimization.md)** — every pathway raw SMS takes through the system is traced; no durable store retains it. Known gaps (TTL on job results, counterparty-store user isolation, DSR endpoint) flagged rather than elided
-- Parser covers **~95% of national MoMo transaction volume** by category (per BoG Q1 2025 report)
-
-*Source: Bank of Ghana, FinTech and Innovation Office. FinTech Sector Report: 2025 Q1.*
+- **[Template Drift Benchmark](docs/drift_benchmark.md)** — 209-case harness runs in CI; for every template, applies seven realistic telco wording changes (verb swap, currency-symbol drift, field reorder, whitespace bloat, truncation, label abbreviation, promo injection) and asserts the parser still recovers `amount`, `tx_type`, `telco`, `balance`. Turns silent format drift into a loud test failure.
+- **Real-data validation** — pipeline exercised against a consented 2,724-message SMS export; surfaced and fixed four parser-level defects (failed-transaction counting, fuzzy-match misclassification of airtime, duplicate-notification dedup, sender-whitelist gap) that synthetic fixtures did not expose. Details in [build log](docs/build_log.md).
+- **Parser robustness** — three defenses against real-world telco SMS messiness: (1) a fuzzy fallback for SMS that don't match any template exactly, with a guard that prevents misclassifying a generic merchant payment as airtime; (2) a filter that rejects "Failed to send," daily-limit, and voucher-expired SMS so they don't inflate transaction totals; (3) drift telemetry that logs which templates needed fuzzy matching, using a hash of the SMS for correlation — never the SMS text itself.
+- **Privacy posture** — raw SMS is never persisted; each message is processed in-request and the original text discarded. Auth + per-key rate limits on every endpoint. Per-pathway audit and known TODOs in [docs/data_minimization.md](docs/data_minimization.md).
+- Parser covers **~95% of national MoMo transaction volume** by category (Bank of Ghana FinTech Sector Report, Q1 2025).
 
 ## Installation
 
@@ -158,14 +151,12 @@ curl -X POST https://momo-parse.up.railway.app/v1/parse \
 
 ## Docs
 
-- [Build Log](docs/build_log.md) — running plain-language record of every non-trivial change
-- [Template Drift Benchmark](docs/drift_benchmark.md) — the 209-case reproducible benchmark for regex-based MoMo SMS parsers
-- [MFH Weight Sensitivity Analysis](docs/sensitivity_analysis.md) — robustness of the 30/25/20/15/10 weighting under ±0.10 perturbation
-- [Data Minimization Audit](docs/data_minimization.md) — per-pathway verification that raw SMS never persists; honest disclosure of what derived data does
-- [ML Evaluation](docs/ml_evaluation.md) — categorizer state: 7,194-sample dataset, stratified 5-fold CV, baselines, held-out test, confusion matrix; honest section on rule-derived labels
-- [Hand-Labeling Guide](docs/hand_labeling_guide.md) — workflow for human-labeled evaluation that breaks the rule-derived-label loop
-- [Roadmap](docs/improvements.md) — tagged inventory of solidify/gap/new-scope items, with current Top-5 next steps
-- [References](docs/references.md) — the literature the five MFH sub-indexes draw from
+- [Build Log](docs/build_log.md) — running record of every non-trivial change, plain language
+- [Template Drift Benchmark](docs/drift_benchmark.md) — what the 209-case CI invariant guarantees
+- [Data Minimization](docs/data_minimization.md) — per-pathway verification that raw SMS never persists, plus known TODOs
+- [ML Evaluation](docs/ml_evaluation.md) — categorizer metrics on the 7,194-sample corpus; how to re-run them
+- [Hand-Labeling Guide](docs/hand_labeling_guide.md) — workflow for producing an honest, human-labeled accuracy number
+- [Roadmap](docs/improvements.md) — current Top-5 next steps + tagged backlog
 - [Project Board](https://github.com/users/theboylexis/projects/1) — task tracking
 
 ## Contributing
