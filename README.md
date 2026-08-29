@@ -1,18 +1,16 @@
 [![CI](https://github.com/theboylexis/momo-parse-api/actions/workflows/ci.yml/badge.svg)](https://github.com/theboylexis/momo-parse-api/actions/workflows/ci.yml)
 
-# MomoParse — User-Owned Financial Intelligence from Mobile Money SMS
+# MomoParse — Mobile Money SMS Parsing & Alt-Credit Scoring
 
-Parse raw Mobile Money SMS messages from MTN and Telecel into structured financial data, categorize transactions with ML, and compute financial health indexes — all from user-owned SMS confirmations.
+*A personal engineering project exploring alt-credit scoring infrastructure for Ghana's mobile money market — a portfolio build, not a company or live product.*
 
-[**Live demo**](https://momo-parse.up.railway.app/demo) — [**API docs**](https://momo-parse.up.railway.app/docs)
+Parses raw Mobile Money SMS messages from MTN and Telecel into structured financial data, categorizes transactions with ML, and computes a financial health index — all from user-owned SMS confirmations.
 
-### Who this serves
+*The hosted demo is currently offline (free-tier hosting lapsed) — clone the repo and run `python examples/basic_parse.py` for a local walkthrough, see [Installation](#installation) below.*
 
-- **Thin-file borrowers** — Ghanaians with no formal bank history but years of MoMo SMS can now demonstrate income stability and repayment capacity to lenders.
-- **Licensed credit scoring entities & digital lenders** — programmatic access to standardized, categorized transaction data for risk models, without building parsing infrastructure from scratch.
-- **Users themselves** — transparent visibility into the financial profile telcos already compute internally but never share back.
+### Motivation
 
-MomoParse is **infrastructure, not a lender.** Credit scoring is a regulated FinTech activity under Bank of Ghana licensing; MomoParse provides the structured data layer that licensed entities build on top of — keeping the user in control of their own SMS data.
+Ghana's mobile money telcos generate a rich picture of a user's financial behavior internally, but that intelligence never gets shared back to the user or to lenders trying to assess someone with no formal bank history. This project explores how much of that picture can be reconstructed from nothing but the SMS confirmations already sitting in a user's inbox — parsing them into structured data, categorizing the spending, and turning it into a single alt-credit signal, entirely from user-owned data rather than telco-side access.
 
 ```python
 import parser as p
@@ -29,11 +27,11 @@ print(result.confidence)  # 0.9
 
 ---
 
-## The Problem
+## Design Question
 
-In Ghana's mobile money market (74.6M registered wallets, 23.9M active, GHS 1.00T in Q1 2025 alone — up 74% YoY, on track for ~GHS 4T annually), telcos score users with proprietary algorithms the user never sees. Credit scoring is an officially licensed FinTech activity (15% of 59 approved FinTech entities), yet users generate the data — telcos own the intelligence.
+Telcos in Ghana's mobile money market score users internally using signals the user never sees — things like top-up frequency, recharge consistency, and contact diversity. The question this project sets out to answer: how many of those same signals can be reconstructed from SMS data the user already owns, without any telco-side access?
 
-MomoParse inverts this: it extracts **6 of the 8 standard alt-credit signals** from user-owned SMS data alone, transparently and through an open API — so licensed lenders can underwrite the unbanked, and users can see what their own data says about them. The two missing signals — handset location and battery/device habits — require invasive OS-level access that user-owned SMS cannot provide.
+The answer: **6 of the 8 standard alt-credit signals** are recoverable from parsed SMS alone. The two that aren't — handset location and battery/device habits — require invasive OS-level access that SMS text can't provide.
 
 | Telco signal (internal) | MomoParse equivalent (from SMS) | Status |
 |---|---|---|
@@ -130,24 +128,17 @@ result = p.parse(sms_text, sender_id="MobileMoney")   # sender ID improves detec
 result.to_dict()                                      # full field dict
 ```
 
-Fields on `ParseResult`: `telco`, `tx_type`, `amount`, `balance`, `fee`, `counterparty_name`, `counterparty_phone`, `tx_id`, `reference`, `date`, `time`, `confidence`, `match_mode`. Schema with types and examples at [/docs](https://momo-parse.up.railway.app/docs).
+Fields on `ParseResult`: `telco`, `tx_type`, `amount`, `balance`, `fee`, `counterparty_name`, `counterparty_phone`, `tx_id`, `reference`, `date`, `time`, `confidence`, `match_mode`. Full schema with types and examples available in the FastAPI service's auto-generated docs when running locally (`/docs`).
 
 ## API
 
-The [MomoParse API](https://momo-parse.up.railway.app/docs) adds:
+Running the FastAPI service locally (see [Installation](#installation)) adds:
 
 - **Categorization** — auto-assigns financial categories (rent, salary, merchant payment, etc.)
 - **Enrichment** — aggregate analytics from 1,000+ SMS in one call
 - **Financial profiles** — indexes, health score, risk signals
 
-**Free sandbox key:** `sk-sandbox-momoparse` — 100 calls/day, no sign-up.
-
-```bash
-curl -X POST https://momo-parse.up.railway.app/v1/parse \
-  -H "X-API-Key: sk-sandbox-momoparse" \
-  -H "Content-Type: application/json" \
-  -d '{"sms_text": "YOUR_SMS_HERE"}'
-```
+*A hosted sandbox with a free API key was previously available; it's offline while hosting is being migrated. In the meantime, `poetry install && poetry run uvicorn api.main:app --reload` spins up the same API locally with interactive docs at `localhost:8000/docs`.*
 
 ## Docs
 
@@ -167,6 +158,6 @@ Issues and PRs welcome. Parser templates live in [`configs/`](configs/) — addi
 
 MIT — Copyright © 2025–2026 Alex Marfo. See [LICENSE](LICENSE).
 
----
+## Author
 
-Built by Alex Marfo ([@theboylexis](https://github.com/theboylexis)) — sole creator and maintainer. [Portfolio](https://alexmarfo.vercel.app) · [Build notes](https://alexmarfo.vercel.app/blog/building-momo-parse-api).
+Alex Marfo ([@theboylexis](https://github.com/theboylexis))
